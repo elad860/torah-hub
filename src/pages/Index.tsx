@@ -7,6 +7,7 @@ import { CategoryCard } from "@/components/CategoryCard";
 import { VideoCard } from "@/components/VideoCard";
 import { useLatestLesson, useLessons } from "@/hooks/useLessons";
 import rabbiBanner from "@/assets/rabbi-banner.png";
+import rabbiHero from "@/assets/rabbi-hero.png";
 
 const DONATION_URL = "https://www.matara.pro/nedarimplus/online/?mosad=7005270";
 
@@ -59,10 +60,9 @@ const Index = () => {
       <section className="relative min-h-[70vh] md:min-h-[80vh] flex items-center overflow-hidden">
         {/* Background Image with blur effect */}
         <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat scale-105"
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{ 
-            backgroundImage: `url(${rabbiBanner})`,
-            filter: 'blur(2px)'
+            backgroundImage: `url(${rabbiHero})`
           }}
         />
         {/* Gradient Overlay - pink/purple to navy like the reference */}

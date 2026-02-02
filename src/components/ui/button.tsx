@@ -20,6 +20,7 @@ const buttonVariants = cva(
         goldOutline: "border-2 border-gold text-gold hover:bg-gold hover:text-primary",
         navy: "bg-gradient-to-br from-navy to-navy-dark text-primary-foreground hover:shadow-[0_12px_40px_-12px_hsl(213_45%_18%/0.2)]",
         hero: "bg-gradient-to-br from-gold to-gold-dark text-primary font-semibold shadow-[0_4px_20px_-4px_hsl(39_50%_56%/0.35)] hover:shadow-[0_12px_40px_-12px_hsl(213_45%_18%/0.2)] hover:scale-[1.02] text-base px-8 py-6",
+        green: "bg-gradient-to-br from-emerald-500 to-emerald-600 text-white font-semibold shadow-[0_4px_20px_-4px_hsl(160_84%_39%/0.35)] hover:shadow-[0_12px_40px_-12px_hsl(160_84%_39%/0.3)] hover:scale-[1.02]",
       },
       size: {
         default: "h-10 px-4 py-2",

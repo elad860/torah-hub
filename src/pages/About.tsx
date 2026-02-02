@@ -54,7 +54,7 @@ const AboutPage = () => {
                 </Button>
               </Link>
               <a href={DONATION_URL} target="_blank" rel="noopener noreferrer">
-                <Button variant="gold" size="lg" className="w-full sm:w-auto gap-2">
+                <Button variant="green" size="lg" className="w-full sm:w-auto gap-2">
                   <Heart className="w-5 h-5" />
                   לתרומה
                 </Button>

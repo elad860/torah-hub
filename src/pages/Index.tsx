@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Play, BookOpen, Scale, Heart as HeartIcon, Sparkles, ArrowLeft, Star, Calendar, Phone, MessageCircle, FileText, Building2 } from "lucide-react";
+import { Play, BookOpen, Scale, Heart as HeartIcon, Sparkles, ArrowLeft, Star, Calendar, Phone, MessageCircle, FileText, Building2, ShoppingBag, Baby, Info, Newspaper } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { YouTubeEmbed } from "@/components/YouTubeEmbed";
@@ -49,6 +49,57 @@ const categories = [
     description: "סיפורי ודברי צדיקים",
     icon: HeartIcon,
     href: "/lessons?category=הילולות צדיקים",
+  },
+];
+
+const communityActivities = [
+  {
+    title: "חנות",
+    description: "רכישת ספרי הרב ומוצרי קדושה",
+    icon: ShoppingBag,
+    href: "/shop",
+  },
+  {
+    title: "מאמרים",
+    description: "מאמרי הגות ופרשת שבוע",
+    icon: FileText,
+    href: "/articles",
+  },
+  {
+    title: "תרומות",
+    description: "תמיכה בפעילות העמותה",
+    icon: HeartIcon,
+    href: "/donate",
+  },
+  {
+    title: "ענפים לילדים",
+    description: "תוכן ופעילות לילדים",
+    icon: Baby,
+    href: "/kids",
+  },
+  {
+    title: "אודות",
+    description: "הכרת העמותה והרב",
+    icon: Info,
+    href: "/about",
+  },
+  {
+    title: "עלונים",
+    description: "ארכיון העלונים השבועיים",
+    icon: Newspaper,
+    href: "/newsletters",
+  },
+  {
+    title: "לוח שיעורים",
+    description: "זמני השיעורים בבית הכנסת",
+    icon: Calendar,
+    href: "/schedule",
+  },
+  {
+    title: "צור קשר",
+    description: "פנייה לרב ולצוות",
+    icon: MessageCircle,
+    href: "/contact",
   },
 ];
 
@@ -174,6 +225,26 @@ const Index = () => {
                 </Button>
               </Link>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Community Activities Section */}
+      <section className="py-12 md:py-16 bg-background">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-10">
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
+              הפעילות שלנו
+            </h2>
+            <p className="text-muted-foreground">
+              מרכז קהילתי לתורה ולקהילה
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-5xl mx-auto">
+            {communityActivities.map((activity) => (
+              <CategoryCard key={activity.title} {...activity} />
+            ))}
           </div>
         </div>
       </section>

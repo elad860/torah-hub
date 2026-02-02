@@ -8,6 +8,12 @@ import Lessons from "./pages/Lessons";
 import Lesson from "./pages/Lesson";
 import Donate from "./pages/Donate";
 import About from "./pages/About";
+import Shop from "./pages/Shop";
+import Articles from "./pages/Articles";
+import Kids from "./pages/Kids";
+import Newsletters from "./pages/Newsletters";
+import Schedule from "./pages/Schedule";
+import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +30,12 @@ const App = () => (
           <Route path="/lesson/:id" element={<Lesson />} />
           <Route path="/donate" element={<Donate />} />
           <Route path="/about" element={<About />} />
+          <Route path="/shop" element={<Shop />} />
+          <Route path="/articles" element={<Articles />} />
+          <Route path="/kids" element={<Kids />} />
+          <Route path="/newsletters" element={<Newsletters />} />
+          <Route path="/schedule" element={<Schedule />} />
+          <Route path="/contact" element={<Contact />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

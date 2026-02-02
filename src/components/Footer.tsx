@@ -1,13 +1,15 @@
 import { Link } from "react-router-dom";
-import { Heart, Mail, Phone, MapPin } from "lucide-react";
+import { Heart, Mail, Phone, MapPin, Download, MessageCircle, FileSpreadsheet } from "lucide-react";
 
 const DONATION_URL = "https://www.matara.pro/nedarimplus/online/?mosad=7005270";
+const ANDROID_APP_URL = "https://onedrive.live.com/?authkey=%21AJGiqKIqVGz5g7Y&id=9C0E89B0FE00F224%2111184&cid=9C0E89B0FE00F224";
+const WHATSAPP_GROUP_URL = "https://chat.whatsapp.com/F2c4sJxtBqB1wHmxcrHNXx";
 
 export function Footer() {
   return (
     <footer className="bg-primary text-primary-foreground">
       <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* About */}
           <div>
             <div className="flex items-center gap-3 mb-4">
@@ -50,6 +52,35 @@ export function Footer() {
             </nav>
           </div>
 
+          {/* Downloads */}
+          <div>
+            <h4 className="font-bold mb-4 text-gold">הורדות</h4>
+            <nav className="flex flex-col gap-3">
+              <a 
+                href={ANDROID_APP_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary-foreground/70 hover:text-gold transition-colors inline-flex items-center gap-2"
+              >
+                <Download className="w-4 h-4" />
+                אפליקציית אנדרואיד "יגדיל תורה"
+              </a>
+              <a 
+                href={WHATSAPP_GROUP_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary-foreground/70 hover:text-gold transition-colors inline-flex items-center gap-2"
+              >
+                <MessageCircle className="w-4 h-4" />
+                קבוצת וואטסאפ
+              </a>
+              <p className="text-primary-foreground/50 text-xs mt-2">
+                <FileSpreadsheet className="w-3 h-3 inline mr-1" />
+                להורדת אפליקציית Google Sheets לצפייה אופטימלית בקבצי השיעורים
+              </p>
+            </nav>
+          </div>
+
           {/* Contact */}
           <div>
             <h4 className="font-bold mb-4 text-gold">יצירת קשר</h4>
@@ -58,10 +89,23 @@ export function Footer() {
                 <MapPin className="w-4 h-4 text-gold" />
                 <span>בית הכנסת וכולל "יגדיל תורה", באר שבע</span>
               </div>
-              <div className="flex items-center gap-2">
+              <a href="mailto:toraoren@gmail.com" className="flex items-center gap-2 hover:text-gold transition-colors">
                 <Mail className="w-4 h-4 text-gold" />
-                <span>info@example.com</span>
-              </div>
+                <span>toraoren@gmail.com</span>
+              </a>
+              <a href="tel:0527134251" className="flex items-center gap-2 hover:text-gold transition-colors">
+                <Phone className="w-4 h-4 text-gold" />
+                <span>052-7134251</span>
+              </a>
+              <a 
+                href="https://wa.me/972504669926" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 hover:text-gold transition-colors"
+              >
+                <MessageCircle className="w-4 h-4 text-gold" />
+                <span>וואטסאפ: 050-4669926</span>
+              </a>
             </div>
           </div>
         </div>

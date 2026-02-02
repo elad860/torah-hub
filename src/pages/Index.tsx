@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Play, BookOpen, Scale, Heart as HeartIcon, Sparkles, ArrowLeft, Star, Calendar, Phone } from "lucide-react";
+import { Play, BookOpen, Scale, Heart as HeartIcon, Sparkles, ArrowLeft, Star, Calendar, Phone, MessageCircle, FileText, Building2 } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { YouTubeEmbed } from "@/components/YouTubeEmbed";
@@ -10,6 +10,8 @@ import rabbiBanner from "@/assets/rabbi-banner.png";
 import rabbiHero from "@/assets/rabbi-hero.png";
 
 const DONATION_URL = "https://www.matara.pro/nedarimplus/online/?mosad=7005270";
+const PARSHA_SHEETS_URL = "https://docs.google.com/spreadsheets/d/1Vg24IqyALCjirUfj8VB0mmalzx36JLeJ/edit";
+const WHATSAPP_GROUP_URL = "https://chat.whatsapp.com/F2c4sJxtBqB1wHmxcrHNXx";
 
 const categories = [
   {
@@ -83,13 +85,19 @@ const Index = () => {
                 שיעורי תורה, הלכה ומוסר
               </p>
               
-              <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start animate-fade-up" style={{ animationDelay: "0.3s" }}>
+              <div className="flex flex-col sm:flex-row flex-wrap gap-4 justify-center md:justify-start animate-fade-up" style={{ animationDelay: "0.3s" }}>
                 <Link to="/lessons">
                   <Button variant="hero" size="xl" className="w-full sm:w-auto">
                     <Play className="w-5 h-5" />
                     לכל השיעורים
                   </Button>
                 </Link>
+                <a href={PARSHA_SHEETS_URL} target="_blank" rel="noopener noreferrer">
+                  <Button variant="hero" size="xl" className="w-full sm:w-auto bg-white/20 hover:bg-white/30">
+                    <FileText className="w-5 h-5" />
+                    דברי תורה לפרשת השבוע
+                  </Button>
+                </a>
                 <a href={DONATION_URL} target="_blank" rel="noopener noreferrer">
                   <Button variant="goldOutline" size="xl" className="w-full sm:w-auto border-gold text-gold hover:bg-gold/20">
                     <HeartIcon className="w-5 h-5" />
@@ -123,6 +131,52 @@ const Index = () => {
         <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background to-transparent" />
       </section>
 
+
+      {/* Building Campaign Section */}
+      <section className="py-12 md:py-16 bg-gradient-to-br from-gold/10 to-gold/5">
+        <div className="container mx-auto px-4">
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-10">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gold/20 flex items-center justify-center">
+                <Building2 className="w-8 h-8 text-gold" />
+              </div>
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
+                שותפות בבניית קריית התורה - יגדיל תורה
+              </h2>
+              <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+                אנו בעיצומו של קמפיין לבניית בית כנסת, בית מדרש ומקוואות טהרה לגברים ונשים בבאר שבע.
+                <br />
+                <span className="text-gold font-semibold">השטח כבר גודר והחפירות החלו!</span>
+              </p>
+            </div>
+
+            {/* Construction Images Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+              <div className="aspect-square bg-muted rounded-lg flex items-center justify-center border-2 border-dashed border-gold/30">
+                <span className="text-muted-foreground text-sm text-center px-2">תמונת גידור השטח</span>
+              </div>
+              <div className="aspect-square bg-muted rounded-lg flex items-center justify-center border-2 border-dashed border-gold/30">
+                <span className="text-muted-foreground text-sm text-center px-2">תמונת החפירות</span>
+              </div>
+              <div className="aspect-square bg-muted rounded-lg flex items-center justify-center border-2 border-dashed border-gold/30">
+                <span className="text-muted-foreground text-sm text-center px-2">הדמיית הפרויקט</span>
+              </div>
+              <div className="aspect-square bg-muted rounded-lg flex items-center justify-center border-2 border-dashed border-gold/30">
+                <span className="text-muted-foreground text-sm text-center px-2">תמונה נוספת</span>
+              </div>
+            </div>
+
+            <div className="text-center">
+              <Link to="/donate">
+                <Button variant="gold" size="xl" className="gap-2">
+                  <HeartIcon className="w-5 h-5" />
+                  להקדשות ושותפות בבנייה
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Categories Section */}
       <section className="py-12 md:py-16 bg-muted/30">
@@ -178,21 +232,61 @@ const Index = () => {
       {/* Listen by Phone Section */}
       <section className="py-12 bg-primary text-primary-foreground">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-right">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-full bg-gold/20 flex items-center justify-center">
-                <Phone className="w-8 h-8 text-gold" />
+          <div className="max-w-5xl mx-auto">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-right mb-8">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-full bg-gold/20 flex items-center justify-center">
+                  <Phone className="w-8 h-8 text-gold" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold mb-1">האזנה טלפונית</h3>
+                  <p className="text-primary-foreground/70">ניתן להאזין לשיעורים מכל טלפון</p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-xl font-bold mb-1">האזנה טלפונית</h3>
-                <p className="text-primary-foreground/70">ניתן להאזין לשיעורים מכל טלפון</p>
+              <div className="text-center">
+                <a href="tel:0799165000" className="text-3xl md:text-4xl font-bold text-gold direction-ltr hover:underline">
+                  0799165000
+                </a>
+                <p className="text-primary-foreground/70 mt-1">שלוחה 59</p>
               </div>
             </div>
-            <div className="text-center">
-              <p className="text-3xl md:text-4xl font-bold text-gold direction-ltr">
-                0799165000
-              </p>
-              <p className="text-primary-foreground/70 mt-1">שלוחה 59</p>
+            
+            {/* Contact Details */}
+            <div className="border-t border-gold/20 pt-6">
+              <div className="flex flex-col md:flex-row items-center justify-center gap-6 text-center">
+                <div>
+                  <p className="text-primary-foreground/80 mb-2">להזמנת שיעורים ברחבי הארץ:</p>
+                  <a href="tel:0527134251" className="text-lg font-semibold text-gold hover:underline">
+                    052-7134251
+                  </a>
+                </div>
+                <div className="hidden md:block w-px h-8 bg-gold/30" />
+                <div>
+                  <p className="text-primary-foreground/80 mb-2">הודעות וואטסאפ:</p>
+                  <a 
+                    href="https://wa.me/972504669926" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-lg font-semibold text-gold hover:underline inline-flex items-center gap-2"
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                    050-4669926
+                  </a>
+                </div>
+                <div className="hidden md:block w-px h-8 bg-gold/30" />
+                <div>
+                  <p className="text-primary-foreground/80 mb-2">קבוצת וואטסאפ:</p>
+                  <a 
+                    href={WHATSAPP_GROUP_URL}
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-lg font-semibold text-gold hover:underline inline-flex items-center gap-2"
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                    הצטרפו לקבוצה
+                  </a>
+                </div>
+              </div>
             </div>
           </div>
         </div>

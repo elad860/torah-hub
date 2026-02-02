@@ -1,4 +1,4 @@
-import { Heart, Building2, Users, BookOpen, Sparkles } from "lucide-react";
+import { Heart, Building2, Users, BookOpen, Sparkles, Bath, GraduationCap, Star } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 
@@ -27,6 +27,27 @@ const features = [
   },
 ];
 
+const donationCards = [
+  {
+    icon: Star,
+    title: "הקדשת שיעור לעילוי נשמה",
+    description: "הקדישו שיעור תורה לעילוי נשמת יקיריכם. השיעור יועלה לערוץ היוטיוב עם הקדשה אישית.",
+    buttonText: "להקדשת שיעור",
+  },
+  {
+    icon: Bath,
+    title: "שותפות בבניית המקווה",
+    description: "היו שותפים במצווה הגדולה של בניית מקוואות טהרה לגברים ונשים בבאר שבע.",
+    buttonText: "לשותפות בבנייה",
+  },
+  {
+    icon: GraduationCap,
+    title: "החזקת אברך",
+    description: "תמכו באברכי כולל 'יגדיל תורה' הלומדים תורה בהתמדה יום ולילה.",
+    buttonText: "להחזקת אברך",
+  },
+];
+
 const DonatePage = () => {
   return (
     <Layout>
@@ -51,6 +72,76 @@ const DonatePage = () => {
                 לתרומה מאובטחת בנדרים פלוס
               </Button>
             </a>
+          </div>
+        </div>
+      </section>
+
+      {/* Donation Cards Section */}
+      <section className="py-16 md:py-20 bg-background">
+        <div className="container mx-auto px-4">
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-12">
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
+                אפשרויות תרומה
+              </h2>
+              <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+                בחרו את אופן השותפות המועדף עליכם בהפצת התורה
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              {donationCards.map((card) => (
+                <div
+                  key={card.title}
+                  className="bg-card p-6 rounded-xl shadow-card hover-lift border border-gold/20"
+                >
+                  <div className="w-14 h-14 rounded-full bg-gold/10 flex items-center justify-center mb-4">
+                    <card.icon className="w-7 h-7 text-gold" />
+                  </div>
+                  <h3 className="font-bold text-lg text-foreground mb-2">
+                    {card.title}
+                  </h3>
+                  <p className="text-muted-foreground mb-4 text-sm leading-relaxed">
+                    {card.description}
+                  </p>
+                  <a href={DONATION_URL} target="_blank" rel="noopener noreferrer">
+                    <Button variant="gold" className="w-full">
+                      <Heart className="w-4 h-4" />
+                      {card.buttonText}
+                    </Button>
+                  </a>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* About Kollel Section */}
+      <section className="py-16 md:py-20 bg-muted/50">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto">
+            <div className="flex flex-col md:flex-row gap-8 items-center">
+              <div className="flex-shrink-0">
+                <div className="w-24 h-24 rounded-full bg-gold/20 flex items-center justify-center">
+                  <GraduationCap className="w-12 h-12 text-gold" />
+                </div>
+              </div>
+              <div>
+                <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
+                  כולל האברכים "יגדיל תורה"
+                </h2>
+                <p className="text-muted-foreground text-lg leading-relaxed mb-4">
+                  כולל "יגדיל תורה" מאגד אברכים מצוינים הלומדים תורה בהתמדה רבה. 
+                  האברכים לומדים בבית המדרש מדי יום, עוסקים בלימוד גמרא, הלכה ומוסר, 
+                  ומהווים דוגמה חיה של עמל התורה לכל הקהילה.
+                </p>
+                <p className="text-muted-foreground leading-relaxed">
+                  החזקת אברכי הכולל מאפשרת להם להתפנות ללימוד התורה ללא דאגות פרנסה, 
+                  ולהקדיש את מלוא זמנם וכוחותיהם לעמל התורה.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -137,11 +228,17 @@ const DonatePage = () => {
               <p className="font-semibold text-foreground mb-2">
                 עמותת "יגדיל תורה"
               </p>
-              <p className="text-muted-foreground">
+              <p className="text-muted-foreground mb-4">
                 בית הכנסת וכולל "יגדיל תורה"
                 <br />
                 באר שבע
               </p>
+              <a 
+                href="mailto:toraoren@gmail.com" 
+                className="text-gold hover:underline font-medium"
+              >
+                toraoren@gmail.com
+              </a>
             </div>
           </div>
         </div>

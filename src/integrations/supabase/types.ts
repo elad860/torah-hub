@@ -44,6 +44,30 @@ export type Database = {
         }
         Relationships: []
       }
+      podcasts: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          spotify_url: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          spotify_url: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          spotify_url?: string
+          title?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

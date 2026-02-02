@@ -9,16 +9,16 @@ const AboutPage = () => {
   return (
     <Layout>
       {/* Hero Section */}
-      <section className="bg-gradient-hero text-primary-foreground py-16 md:py-24">
+      <section className="py-16 md:py-24">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center">
             <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-gold flex items-center justify-center shadow-gold animate-fade-up">
               <span className="text-primary font-bold text-3xl">ת</span>
             </div>
-            <h1 className="text-3xl md:text-5xl font-bold mb-4 animate-fade-up" style={{ animationDelay: "0.1s" }}>
+            <h1 className="text-3xl md:text-5xl font-bold mb-4 animate-fade-up text-white" style={{ animationDelay: "0.1s" }}>
               הרב <span className="text-gold">אורן נזרית</span> שליט"א
             </h1>
-            <p className="text-lg md:text-xl text-primary-foreground/80 animate-fade-up" style={{ animationDelay: "0.2s" }}>
+            <p className="text-lg md:text-xl text-white/80 animate-fade-up" style={{ animationDelay: "0.2s" }}>
               רב בית הכנסת וראש כולל "יגדיל תורה" בבאר שבע
             </p>
           </div>
@@ -26,21 +26,21 @@ const AboutPage = () => {
       </section>
 
       {/* Bio Section */}
-      <section className="py-16 md:py-20 bg-background">
+      <section className="py-16 md:py-20 bg-black/30 backdrop-blur-sm">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto">
-            <div className="prose prose-lg max-w-none text-foreground">
-              <p className="text-lg text-muted-foreground leading-relaxed mb-6">
+            <div className="prose prose-lg max-w-none">
+              <p className="text-lg text-white/80 leading-relaxed mb-6">
                 הרב אורן נזרית שליט"א הוא רב בית הכנסת וראש כולל "יגדיל תורה" בעיר באר שבע.
                 הרב מוסר שיעורים בגמרא, הלכה, פרשת השבוע ומוסר, ופועל להפצת תורה בנגב ובכל רחבי הארץ.
               </p>
               
-              <p className="text-lg text-muted-foreground leading-relaxed mb-6">
+              <p className="text-lg text-white/80 leading-relaxed mb-6">
                 באתר זה ריכזנו את מאות שיעורי הוידאו של הרב, כדי לאפשר לכל אחד ללמוד 
                 ולהתעלות מכל מקום ובכל זמן. השיעורים מחולקים לקטגוריות לנוחיותכם.
               </p>
 
-              <p className="text-lg text-muted-foreground leading-relaxed">
+              <p className="text-lg text-white/80 leading-relaxed">
                 הרב עומד בראש עמותת "יגדיל תורה" הפועלת להפצת תורה, תמיכה באברכים 
                 וחיזוק חיי הרוח בבאר שבע והנגב.
               </p>

@@ -18,7 +18,7 @@ export function Layout({ children }: LayoutProps) {
         }}
       />
       {/* Dark Overlay for Readability */}
-      <div className="fixed inset-0 -z-10 bg-primary/75 backdrop-blur-[2px]" />
+      <div className="fixed inset-0 -z-10 bg-black/60 backdrop-blur-sm" />
       
       <Header />
       <main className="flex-1 relative">{children}</main>

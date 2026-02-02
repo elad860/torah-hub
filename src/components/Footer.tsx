@@ -7,7 +7,7 @@ const WHATSAPP_GROUP_URL = "https://chat.whatsapp.com/F2c4sJxtBqB1wHmxcrHNXx";
 
 export function Footer() {
   return (
-    <footer className="bg-primary text-primary-foreground">
+    <footer className="bg-black/70 backdrop-blur-md text-white border-t border-gold/20">
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* About */}
@@ -21,7 +21,7 @@ export function Footer() {
                 <p className="text-gold text-sm">שיעורי תורה והלכה</p>
               </div>
             </div>
-            <p className="text-primary-foreground/70 text-sm leading-relaxed">
+            <p className="text-white/70 text-sm leading-relaxed">
               מאות שיעורי וידאו בפרשת השבוע, הלכה, מוסר ומחשבה. 
               הצטרפו לאלפי הלומדים והעשירו את חיי הרוח שלכם.
             </p>
@@ -31,20 +31,20 @@ export function Footer() {
           <div>
             <h4 className="font-bold mb-4 text-gold">קישורים מהירים</h4>
             <nav className="flex flex-col gap-2">
-              <Link to="/lessons" className="text-primary-foreground/70 hover:text-gold transition-colors">
+              <Link to="/lessons" className="text-white/70 hover:text-gold transition-colors">
                 ספריית השיעורים
               </Link>
-              <Link to="/about" className="text-primary-foreground/70 hover:text-gold transition-colors">
+              <Link to="/about" className="text-white/70 hover:text-gold transition-colors">
                 אודות
               </Link>
-              <Link to="/donate" className="text-primary-foreground/70 hover:text-gold transition-colors">
+              <Link to="/donate" className="text-white/70 hover:text-gold transition-colors">
                 תרומות
               </Link>
               <a 
                 href={DONATION_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-primary-foreground/70 hover:text-gold transition-colors inline-flex items-center gap-2"
+                className="text-white/70 hover:text-gold transition-colors inline-flex items-center gap-2"
               >
                 <Heart className="w-4 h-4" />
                 תרומה דרך נדרים פלוס
@@ -60,7 +60,7 @@ export function Footer() {
                 href={ANDROID_APP_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-primary-foreground/70 hover:text-gold transition-colors inline-flex items-center gap-2"
+                className="text-white/70 hover:text-gold transition-colors inline-flex items-center gap-2"
               >
                 <Download className="w-4 h-4" />
                 אפליקציית אנדרואיד "יגדיל תורה"
@@ -69,12 +69,12 @@ export function Footer() {
                 href={WHATSAPP_GROUP_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-primary-foreground/70 hover:text-gold transition-colors inline-flex items-center gap-2"
+                className="text-white/70 hover:text-gold transition-colors inline-flex items-center gap-2"
               >
                 <MessageCircle className="w-4 h-4" />
                 קבוצת וואטסאפ
               </a>
-              <p className="text-primary-foreground/50 text-xs mt-2">
+              <p className="text-white/50 text-xs mt-2">
                 <FileSpreadsheet className="w-3 h-3 inline mr-1" />
                 להורדת אפליקציית Google Sheets לצפייה אופטימלית בקבצי השיעורים
               </p>
@@ -84,7 +84,7 @@ export function Footer() {
           {/* Contact */}
           <div>
             <h4 className="font-bold mb-4 text-gold">יצירת קשר</h4>
-            <div className="flex flex-col gap-3 text-primary-foreground/70 text-sm">
+            <div className="flex flex-col gap-3 text-white/70 text-sm">
               <div className="flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-gold" />
                 <span>בית הכנסת וכולל "יגדיל תורה", באר שבע</span>
@@ -110,7 +110,7 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="border-t border-gold/20 mt-8 pt-8 text-center text-primary-foreground/50 text-sm">
+        <div className="border-t border-gold/20 mt-8 pt-8 text-center text-white/50 text-sm">
           <p>© {new Date().getFullYear()} הרב אורן נזרית - כל הזכויות שמורות</p>
         </div>
       </div>

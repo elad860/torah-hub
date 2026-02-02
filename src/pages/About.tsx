@@ -2,6 +2,7 @@ import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { BookOpen, Heart } from "lucide-react";
+import rabbiBanner from "@/assets/rabbi-banner.png";
 
 const DONATION_URL = "https://www.matara.pro/nedarimplus/online/?mosad=7005270";
 
@@ -12,8 +13,8 @@ const AboutPage = () => {
       <section className="py-16 md:py-24">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center">
-            <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-gold flex items-center justify-center shadow-gold animate-fade-up">
-              <span className="text-primary font-bold text-3xl">ת</span>
+            <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-gold flex items-center justify-center shadow-gold animate-fade-up overflow-hidden">
+              <img src={rabbiBanner} alt="הרב אורן נזרית" className="w-full h-full object-cover object-top" />
             </div>
             <h1 className="text-3xl md:text-5xl font-bold mb-4 animate-fade-up text-white" style={{ animationDelay: "0.1s" }}>
               הרב <span className="text-gold">אורן נזרית</span> שליט"א

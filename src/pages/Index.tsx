@@ -179,22 +179,22 @@ const Index = () => {
         </div>
 
         {/* Bottom fade */}
-        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/40 to-transparent" />
       </section>
 
 
       {/* Building Campaign Section */}
-      <section className="py-12 md:py-16 bg-gradient-to-br from-gold/10 to-gold/5">
+      <section className="py-12 md:py-16 bg-black/30 backdrop-blur-sm">
         <div className="container mx-auto px-4">
           <div className="max-w-5xl mx-auto">
             <div className="text-center mb-10">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gold/20 flex items-center justify-center">
                 <Building2 className="w-8 h-8 text-gold" />
               </div>
-              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
+              <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">
                 שותפות בבניית קריית התורה - יגדיל תורה
               </h2>
-              <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+              <p className="text-white/80 text-lg max-w-2xl mx-auto">
                 אנו בעיצומו של קמפיין לבניית בית כנסת, בית מדרש ומקוואות טהרה לגברים ונשים בבאר שבע.
                 <br />
                 <span className="text-gold font-semibold">השטח כבר גודר והחפירות החלו!</span>
@@ -203,17 +203,17 @@ const Index = () => {
 
             {/* Construction Images Grid */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-              <div className="aspect-square bg-muted rounded-lg flex items-center justify-center border-2 border-dashed border-gold/30">
-                <span className="text-muted-foreground text-sm text-center px-2">תמונת גידור השטח</span>
+              <div className="aspect-square bg-white/10 rounded-lg flex items-center justify-center border-2 border-dashed border-gold/30">
+                <span className="text-white/60 text-sm text-center px-2">תמונת גידור השטח</span>
               </div>
-              <div className="aspect-square bg-muted rounded-lg flex items-center justify-center border-2 border-dashed border-gold/30">
-                <span className="text-muted-foreground text-sm text-center px-2">תמונת החפירות</span>
+              <div className="aspect-square bg-white/10 rounded-lg flex items-center justify-center border-2 border-dashed border-gold/30">
+                <span className="text-white/60 text-sm text-center px-2">תמונת החפירות</span>
               </div>
-              <div className="aspect-square bg-muted rounded-lg flex items-center justify-center border-2 border-dashed border-gold/30">
-                <span className="text-muted-foreground text-sm text-center px-2">הדמיית הפרויקט</span>
+              <div className="aspect-square bg-white/10 rounded-lg flex items-center justify-center border-2 border-dashed border-gold/30">
+                <span className="text-white/60 text-sm text-center px-2">הדמיית הפרויקט</span>
               </div>
-              <div className="aspect-square bg-muted rounded-lg flex items-center justify-center border-2 border-dashed border-gold/30">
-                <span className="text-muted-foreground text-sm text-center px-2">תמונה נוספת</span>
+              <div className="aspect-square bg-white/10 rounded-lg flex items-center justify-center border-2 border-dashed border-gold/30">
+                <span className="text-white/60 text-sm text-center px-2">תמונה נוספת</span>
               </div>
             </div>
 
@@ -230,13 +230,13 @@ const Index = () => {
       </section>
 
       {/* Community Activities Section */}
-      <section className="py-12 md:py-16 bg-background">
+      <section className="py-12 md:py-16">
         <div className="container mx-auto px-4">
           <div className="text-center mb-10">
-            <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
+            <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">
               הפעילות שלנו
             </h2>
-            <p className="text-muted-foreground">
+            <p className="text-white/70">
               מרכז קהילתי לתורה ולקהילה
             </p>
           </div>
@@ -250,13 +250,13 @@ const Index = () => {
       </section>
 
       {/* Categories Section */}
-      <section className="py-12 md:py-16 bg-muted/30">
+      <section className="py-12 md:py-16 bg-black/20">
         <div className="container mx-auto px-4">
           <div className="text-center mb-10">
-            <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
+            <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">
               קטגוריות שיעורים
             </h2>
-            <p className="text-muted-foreground">
+            <p className="text-white/70">
               בחרו את הנושא שמעניין אתכם
             </p>
           </div>
@@ -271,10 +271,10 @@ const Index = () => {
 
       {/* Recent Lessons Grid */}
       {recentLessons && recentLessons.length > 1 && (
-        <section className="py-12 md:py-16 bg-background">
+        <section className="py-12 md:py-16">
           <div className="container mx-auto px-4">
             <div className="flex items-center justify-between mb-8">
-              <h2 className="text-2xl md:text-3xl font-bold text-foreground">
+              <h2 className="text-2xl md:text-3xl font-bold text-white">
                 שיעורים אחרונים
               </h2>
               <Link to="/lessons" className="text-gold hover:text-gold/80 transition-colors inline-flex items-center gap-1">
@@ -301,7 +301,7 @@ const Index = () => {
       )}
 
       {/* Listen by Phone Section */}
-      <section className="py-12 bg-primary text-primary-foreground">
+      <section className="py-12 bg-black/40 backdrop-blur-sm text-white">
         <div className="container mx-auto px-4">
           <div className="max-w-5xl mx-auto">
             <div className="flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-right mb-8">
@@ -311,14 +311,14 @@ const Index = () => {
                 </div>
                 <div>
                   <h3 className="text-xl font-bold mb-1">האזנה טלפונית</h3>
-                  <p className="text-primary-foreground/70">ניתן להאזין לשיעורים מכל טלפון</p>
+                  <p className="text-white/70">ניתן להאזין לשיעורים מכל טלפון</p>
                 </div>
               </div>
               <div className="text-center">
                 <a href="tel:0799165000" className="text-3xl md:text-4xl font-bold text-gold direction-ltr hover:underline">
                   0799165000
                 </a>
-                <p className="text-primary-foreground/70 mt-1">שלוחה 59</p>
+                <p className="text-white/70 mt-1">שלוחה 59</p>
               </div>
             </div>
             
@@ -326,14 +326,14 @@ const Index = () => {
             <div className="border-t border-gold/20 pt-6">
               <div className="flex flex-col md:flex-row items-center justify-center gap-6 text-center">
                 <div>
-                  <p className="text-primary-foreground/80 mb-2">להזמנת שיעורים ברחבי הארץ:</p>
+                  <p className="text-white/80 mb-2">להזמנת שיעורים ברחבי הארץ:</p>
                   <a href="tel:0527134251" className="text-lg font-semibold text-gold hover:underline">
                     052-7134251
                   </a>
                 </div>
                 <div className="hidden md:block w-px h-8 bg-gold/30" />
                 <div>
-                  <p className="text-primary-foreground/80 mb-2">הודעות וואטסאפ:</p>
+                  <p className="text-white/80 mb-2">הודעות וואטסאפ:</p>
                   <a 
                     href="https://wa.me/972504669926" 
                     target="_blank" 
@@ -346,7 +346,7 @@ const Index = () => {
                 </div>
                 <div className="hidden md:block w-px h-8 bg-gold/30" />
                 <div>
-                  <p className="text-primary-foreground/80 mb-2">קבוצת וואטסאפ:</p>
+                  <p className="text-white/80 mb-2">קבוצת וואטסאפ:</p>
                   <a 
                     href={WHATSAPP_GROUP_URL}
                     target="_blank" 
@@ -364,7 +364,7 @@ const Index = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 md:py-20 bg-gradient-to-br from-muted to-muted/50">
+      <section className="py-16 md:py-20 bg-black/30 backdrop-blur-sm">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center">
             <div className="w-24 h-24 mx-auto mb-6 rounded-full overflow-hidden border-4 border-gold shadow-gold">
@@ -374,10 +374,10 @@ const Index = () => {
                 className="w-full h-full object-cover object-top"
               />
             </div>
-            <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
+            <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
               תמכו בהפצת התורה
             </h2>
-            <p className="text-muted-foreground mb-8 text-lg">
+            <p className="text-white/80 mb-8 text-lg">
               עמותת "יגדיל תורה" פועלת להפצת תורה בבאר שבע והנגב.
               <br />
               תרומתכם מאפשרת להמשיך ולייצר תוכן תורני איכותי.

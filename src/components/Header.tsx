@@ -20,7 +20,7 @@ export function Header() {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <header className="sticky top-0 z-50 bg-primary/95 backdrop-blur-md border-b border-gold/20">
+    <header className="sticky top-0 z-50 bg-black/70 backdrop-blur-md border-b border-gold/20">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16 md:h-20">
           {/* Logo */}
@@ -29,7 +29,7 @@ export function Header() {
               <span className="text-primary font-bold text-lg md:text-xl">ת</span>
             </div>
             <div className="hidden sm:block">
-              <h1 className="text-primary-foreground font-bold text-lg md:text-xl">הרב אורן נזרית</h1>
+              <h1 className="text-white font-bold text-lg md:text-xl">הרב אורן נזרית</h1>
               <p className="text-gold text-xs md:text-sm">שיעורי תורה והלכה</p>
             </div>
           </Link>
@@ -41,7 +41,7 @@ export function Header() {
                 key={link.href}
                 to={link.href}
                 className={cn(
-                  "px-4 py-2 rounded-lg text-primary-foreground/80 hover:text-primary-foreground transition-colors",
+                  "px-4 py-2 rounded-lg text-white/80 hover:text-white transition-colors",
                   isActive(link.href) && "bg-gold/20 text-gold font-medium"
                 )}
               >
@@ -66,7 +66,7 @@ export function Header() {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="md:hidden text-primary-foreground p-2"
+            className="md:hidden text-white p-2"
             aria-label="תפריט"
           >
             {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -83,7 +83,7 @@ export function Header() {
                   to={link.href}
                   onClick={() => setIsMenuOpen(false)}
                   className={cn(
-                    "px-4 py-3 rounded-lg text-primary-foreground/80 hover:bg-gold/10 transition-colors",
+                    "px-4 py-3 rounded-lg text-white/80 hover:bg-gold/10 transition-colors",
                     isActive(link.href) && "bg-gold/20 text-gold font-medium"
                   )}
                 >

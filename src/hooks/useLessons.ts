@@ -1,0 +1,94 @@
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+
+export interface Lesson {
+  id: string;
+  title: string;
+  youtube_url: string;
+  description: string | null;
+  category: string;
+  series: string | null;
+  created_at: string;
+}
+
+export function useLessons(category?: string) {
+  return useQuery({
+    queryKey: ["lessons", category],
+    queryFn: async () => {
+      let query = supabase
+        .from("lessons")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (category) {
+        query = query.eq("category", category);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        throw error;
+      }
+
+      return data as Lesson[];
+    },
+  });
+}
+
+export function useLesson(id: string) {
+  return useQuery({
+    queryKey: ["lesson", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("lessons")
+        .select("*")
+        .eq("id", id)
+        .maybeSingle();
+
+      if (error) {
+        throw error;
+      }
+
+      return data as Lesson | null;
+    },
+    enabled: !!id,
+  });
+}
+
+export function useLatestLesson() {
+  return useQuery({
+    queryKey: ["latest-lesson"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("lessons")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) {
+        throw error;
+      }
+
+      return data as Lesson | null;
+    },
+  });
+}
+
+export function useCategories() {
+  return useQuery({
+    queryKey: ["categories"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("lessons")
+        .select("category");
+
+      if (error) {
+        throw error;
+      }
+
+      const categories = [...new Set(data.map((item) => item.category))];
+      return categories;
+    },
+  });
+}

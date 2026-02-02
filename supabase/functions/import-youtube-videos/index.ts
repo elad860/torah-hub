@@ -15,7 +15,11 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    const channelId = 'UC8p9UcdygL7bIdbyoOZuNPQ'
+    // Channel: @yagdil (יגדיל תורה)
+    const channelId = 'UCyagdil_channel_id'
+    
+    // First try to get channel ID from @yagdil handle
+    let actualChannelId = 'UC8p9UcdygL7bIdbyoOZuNPQ' // fallback
     
     // Fetch YouTube RSS feed (gives latest 15 videos)
     console.log('Fetching YouTube RSS feed...')
@@ -48,7 +52,7 @@ Deno.serve(async (req) => {
         `https://www.youtube.com/channel/${channelId}/videos`,
         `https://www.youtube.com/channel/${channelId}/playlists`,
         // Try with @handle format
-        'https://www.youtube.com/@הרבאורןנזרית/videos',
+        'https://www.youtube.com/@yagdil/videos',
       ]
 
       for (const scrapeUrl of urlsToScrape) {

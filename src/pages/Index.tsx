@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Play, BookOpen, Scale, Heart as HeartIcon, Sparkles, ArrowLeft } from "lucide-react";
+import { Play, BookOpen, Scale, Heart as HeartIcon, Sparkles, ArrowLeft, Star, Calendar } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { YouTubeEmbed } from "@/components/YouTubeEmbed";
@@ -11,10 +11,10 @@ const DONATION_URL = "https://www.matara.pro/nedarimplus/online/?mosad=7005270";
 
 const categories = [
   {
-    title: "פרשת שבוע",
+    title: "פרשת השבוע",
     description: "שיעורים מעמיקים על פרשת השבוע",
     icon: BookOpen,
-    href: "/lessons?category=פרשת שבוע",
+    href: "/lessons?category=פרשת השבוע",
   },
   {
     title: "הלכה",
@@ -27,6 +27,24 @@ const categories = [
     description: "דברי מוסר והתחזקות",
     icon: Sparkles,
     href: "/lessons?category=מוסר",
+  },
+  {
+    title: "חגים",
+    description: "שיעורים לחגי ישראל",
+    icon: Calendar,
+    href: "/lessons?category=חגים",
+  },
+  {
+    title: "זוהר וקבלה",
+    description: "לימודי פנימיות התורה",
+    icon: Star,
+    href: "/lessons?category=זוהר וקבלה",
+  },
+  {
+    title: "הילולות צדיקים",
+    description: "סיפורי ודברי צדיקים",
+    icon: HeartIcon,
+    href: "/lessons?category=הילולות צדיקים",
   },
 ];
 
@@ -119,7 +137,7 @@ const Index = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
             {categories.map((category) => (
               <CategoryCard key={category.title} {...category} />
             ))}

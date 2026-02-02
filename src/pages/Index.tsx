@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Play, BookOpen, Scale, Heart as HeartIcon, Sparkles, ArrowLeft, Star, Calendar, Phone, MessageCircle, FileText, Building2, ShoppingBag, Baby, Info, Newspaper } from "lucide-react";
+import { Play, BookOpen, Scale, Heart as HeartIcon, Sparkles, ArrowLeft, Star, Calendar, Phone, MessageCircle, FileText, Building2, ShoppingBag, Baby, Info, Newspaper, Headphones } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { YouTubeEmbed } from "@/components/YouTubeEmbed";
@@ -64,6 +64,12 @@ const communityActivities = [
     description: "מאמרי הגות ופרשת שבוע",
     icon: FileText,
     href: "/articles",
+  },
+  {
+    title: "פודקאסט",
+    description: "האזנה בספוטיפיי",
+    icon: Headphones,
+    href: "/podcasts",
   },
   {
     title: "תרומות",

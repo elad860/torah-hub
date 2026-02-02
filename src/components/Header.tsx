@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { Menu, X, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import rabbiBanner from "@/assets/rabbi-banner.png";
 
 const DONATION_URL = "https://www.matara.pro/nedarimplus/online/?mosad=7005270";
 
@@ -25,8 +26,8 @@ export function Header() {
         <div className="flex items-center justify-between h-16 md:h-20">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3">
-            <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-gold flex items-center justify-center shadow-gold">
-              <span className="text-primary font-bold text-lg md:text-xl">ת</span>
+            <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-gold flex items-center justify-center shadow-gold overflow-hidden">
+              <img src={rabbiBanner} alt="הרב אורן נזרית" className="w-full h-full object-cover object-top" />
             </div>
             <div className="hidden sm:block">
               <h1 className="text-white font-bold text-lg md:text-xl">הרב אורן נזרית</h1>

@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Heart, Mail, Phone, MapPin, Download, MessageCircle, FileSpreadsheet } from "lucide-react";
+import rabbiBanner from "@/assets/rabbi-banner.png";
 
 const DONATION_URL = "https://www.matara.pro/nedarimplus/online/?mosad=7005270";
 const ANDROID_APP_URL = "https://onedrive.live.com/?authkey=%21AJGiqKIqVGz5g7Y&id=9C0E89B0FE00F224%2111184&cid=9C0E89B0FE00F224";
@@ -13,8 +14,8 @@ export function Footer() {
           {/* About */}
           <div>
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-gradient-gold flex items-center justify-center">
-                <span className="text-primary font-bold">ת</span>
+              <div className="w-10 h-10 rounded-full bg-gradient-gold flex items-center justify-center overflow-hidden">
+                <img src={rabbiBanner} alt="הרב אורן נזרית" className="w-full h-full object-cover object-top" />
               </div>
               <div>
                 <h3 className="font-bold text-lg">הרב אורן נזרית</h3>

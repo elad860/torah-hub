@@ -88,10 +88,25 @@ export function useCategories() {
   return useQuery({
     queryKey: ["categories"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("lessons").select("category");
-      if (error) throw error;
-      const categories = [...new Set(data.map((item) => item.category))];
-      return categories;
+      // Fetch one lesson per category by querying with each known category
+      // Use a small limit per page and collect all unique categories
+      const allCategories = new Set<string>();
+      let from = 0;
+      const batchSize = 1000;
+      let hasMore = true;
+
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from("lessons")
+          .select("category")
+          .range(from, from + batchSize - 1);
+        if (error) throw error;
+        data.forEach((item) => allCategories.add(item.category));
+        hasMore = data.length === batchSize;
+        from += batchSize;
+      }
+
+      return [...allCategories];
     },
   });
 }
@@ -100,17 +115,26 @@ export function usePlaylists() {
   return useQuery({
     queryKey: ["playlists"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("lessons")
-        .select("playlist_id, playlist_name");
-      if (error) throw error;
-
       const map = new Map<string, string>();
-      for (const item of data) {
-        if (item.playlist_id && item.playlist_name) {
-          map.set(item.playlist_id, item.playlist_name);
+      let from = 0;
+      const batchSize = 1000;
+      let hasMore = true;
+
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from("lessons")
+          .select("playlist_id, playlist_name")
+          .range(from, from + batchSize - 1);
+        if (error) throw error;
+        for (const item of data) {
+          if (item.playlist_id && item.playlist_name) {
+            map.set(item.playlist_id, item.playlist_name);
+          }
         }
+        hasMore = data.length === batchSize;
+        from += batchSize;
       }
+
       return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
     },
   });

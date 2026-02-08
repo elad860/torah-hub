@@ -44,6 +44,36 @@ export type Database = {
         }
         Relationships: []
       }
+      orders: {
+        Row: {
+          book_price: number
+          book_title: string
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          phone: string
+        }
+        Insert: {
+          book_price: number
+          book_title: string
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          phone: string
+        }
+        Update: {
+          book_price?: number
+          book_title?: string
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          phone?: string
+        }
+        Relationships: []
+      }
       podcasts: {
         Row: {
           created_at: string

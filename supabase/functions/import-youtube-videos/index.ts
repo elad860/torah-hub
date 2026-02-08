@@ -5,215 +5,197 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+const YOUTUBE_API_BASE = 'https://www.googleapis.com/youtube/v3'
+const CHANNEL_HANDLE = '@yagdil'
+
+interface YouTubePlaylist {
+  id: string
+  snippet: {
+    title: string
+    description: string
+    publishedAt: string
+  }
+}
+
+interface YouTubePlaylistItem {
+  snippet: {
+    title: string
+    description: string
+    publishedAt: string
+    resourceId: { videoId: string }
+    playlistId: string
+  }
+}
+
+async function getChannelId(apiKey: string): Promise<string> {
+  const res = await fetch(
+    `${YOUTUBE_API_BASE}/channels?forHandle=${CHANNEL_HANDLE}&part=id&key=${apiKey}`
+  )
+  const data = await res.json()
+  if (!data.items?.length) throw new Error('Channel not found for handle ' + CHANNEL_HANDLE)
+  return data.items[0].id
+}
+
+async function getPlaylists(apiKey: string, channelId: string): Promise<YouTubePlaylist[]> {
+  const playlists: YouTubePlaylist[] = []
+  let pageToken = ''
+
+  do {
+    const url = `${YOUTUBE_API_BASE}/playlists?channelId=${channelId}&part=snippet&maxResults=50&key=${apiKey}${pageToken ? `&pageToken=${pageToken}` : ''}`
+    const res = await fetch(url)
+    const data = await res.json()
+    if (data.items) playlists.push(...data.items)
+    pageToken = data.nextPageToken || ''
+  } while (pageToken)
+
+  return playlists
+}
+
+async function getPlaylistVideos(apiKey: string, playlistId: string): Promise<YouTubePlaylistItem[]> {
+  const items: YouTubePlaylistItem[] = []
+  let pageToken = ''
+
+  do {
+    const url = `${YOUTUBE_API_BASE}/playlistItems?playlistId=${playlistId}&part=snippet&maxResults=50&key=${apiKey}${pageToken ? `&pageToken=${pageToken}` : ''}`
+    const res = await fetch(url)
+    const data = await res.json()
+    if (data.items) items.push(...data.items)
+    pageToken = data.nextPageToken || ''
+  } while (pageToken)
+
+  return items
+}
+
+// Map playlist names to our category system
+function categorizePlaylist(playlistName: string): string {
+  const lower = playlistName
+  const categoryMap: Record<string, string[]> = {
+    'פרשת השבוע': ['פרשת', 'פרשה', 'בראשית', 'נח', 'לך לך', 'שמות', 'ויקרא', 'במדבר', 'דברים'],
+    'הלכה': ['הלכה', 'הלכות', 'שבת', 'כשרות', 'תפילה', 'ברכות', 'שולחן ערוך'],
+    'מוסר': ['מוסר', 'מידות', 'אמונה', 'ביטחון', 'תשובה', 'עבודת ה', 'חינוך'],
+    'חגים': ['ראש השנה', 'יום כיפור', 'סוכות', 'פסח', 'שבועות', 'פורים', 'חנוכה'],
+    'זוהר וקבלה': ['זוהר', 'קבלה', 'סוד', 'אור החיים'],
+    'הילולות צדיקים': ['הילולת', 'הילולא', 'צדיקים', 'רבי'],
+  }
+
+  for (const [cat, patterns] of Object.entries(categoryMap)) {
+    if (patterns.some(p => lower.includes(p))) return cat
+  }
+  return 'כללי'
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
 
   try {
+    const apiKey = Deno.env.get('YOUTUBE_API_KEY')
+    if (!apiKey) throw new Error('YOUTUBE_API_KEY not configured')
+
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    // Channel: @yagdil (יגדיל תורה)
-    const channelId = 'UCyagdil_channel_id'
-    
-    // First try to get channel ID from @yagdil handle
-    let actualChannelId = 'UC8p9UcdygL7bIdbyoOZuNPQ' // fallback
-    
-    // Fetch YouTube RSS feed (gives latest 15 videos)
-    console.log('Fetching YouTube RSS feed...')
-    const rssUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`
-    const rssResponse = await fetch(rssUrl)
-    
-    if (!rssResponse.ok) {
-      throw new Error(`RSS feed failed: ${rssResponse.status}`)
-    }
-    
-    const rssText = await rssResponse.text()
-    
-    // Parse video IDs and titles from RSS
-    const videoMatches = rssText.matchAll(/<yt:videoId>([^<]+)<\/yt:videoId>[\s\S]*?<title>([^<]+)<\/title>/g)
-    const rssVideos: { id: string; title: string }[] = []
-    
-    for (const match of videoMatches) {
-      rssVideos.push({ id: match[1], title: match[2] })
-    }
-    
-    console.log(`Found ${rssVideos.length} videos from RSS`)
+    // 1. Get channel ID
+    console.log('Fetching channel ID...')
+    const channelId = await getChannelId(apiKey)
+    console.log('Channel ID:', channelId)
 
-    // Also try to scrape using Firecrawl with different approaches
-    const apiKey = Deno.env.get('FIRECRAWL_API_KEY')
-    const additionalVideos: { id: string; title: string }[] = []
-    
-    if (apiKey) {
-      // Try multiple pages and playlists
-      const urlsToScrape = [
-        `https://www.youtube.com/channel/${channelId}/videos`,
-        `https://www.youtube.com/channel/${channelId}/playlists`,
-        // Try with @handle format
-        'https://www.youtube.com/@yagdil/videos',
-      ]
+    // 2. Get all playlists
+    console.log('Fetching playlists...')
+    const playlists = await getPlaylists(apiKey, channelId)
+    console.log(`Found ${playlists.length} playlists`)
 
-      for (const scrapeUrl of urlsToScrape) {
-        try {
-          console.log(`Scraping: ${scrapeUrl}`)
-          const scrapeResponse = await fetch('https://api.firecrawl.dev/v1/scrape', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${apiKey}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              url: scrapeUrl,
-              formats: ['rawHtml'],
-              waitFor: 8000,
-            }),
-          })
+    // 3. Fetch videos from each playlist
+    const allVideos: Array<{
+      youtube_url: string
+      title: string
+      description: string | null
+      category: string
+      series: string | null
+      playlist_id: string
+      playlist_name: string
+      published_at: string
+    }> = []
 
-          if (scrapeResponse.ok) {
-            const scrapeData = await scrapeResponse.json()
-            const html = scrapeData.data?.rawHtml || scrapeData.rawHtml || ''
-            
-            // Extract video IDs using multiple patterns
-            const patterns = [
-              /\"videoId\":\"([a-zA-Z0-9_-]{11})\"/g,
-              /watch\?v=([a-zA-Z0-9_-]{11})/g,
-              /\/shorts\/([a-zA-Z0-9_-]{11})/g,
-            ]
+    const seenVideoIds = new Set<string>()
 
-            for (const pattern of patterns) {
-              const matches = html.matchAll(pattern)
-              for (const match of matches) {
-                const id = match[1]
-                if (!rssVideos.find(v => v.id === id) && !additionalVideos.find(v => v.id === id)) {
-                  additionalVideos.push({ id, title: '' })
-                }
-              }
-            }
-            
-            console.log(`Found ${additionalVideos.length} additional unique video IDs so far`)
-          }
-        } catch (e) {
-          console.log(`Scrape failed for ${scrapeUrl}:`, e)
-        }
-      }
-    }
+    for (const playlist of playlists) {
+      console.log(`Fetching videos from playlist: ${playlist.snippet.title}`)
+      const items = await getPlaylistVideos(apiKey, playlist.id)
+      const category = categorizePlaylist(playlist.snippet.title)
 
-    // Combine all videos, prioritizing RSS (has titles)
-    const allVideos = [...rssVideos, ...additionalVideos]
-    console.log(`Total unique videos before processing: ${allVideos.length}`)
+      for (const item of items) {
+        const videoId = item.snippet.resourceId?.videoId
+        if (!videoId || seenVideoIds.has(videoId)) continue
+        seenVideoIds.add(videoId)
 
-    // Process videos - limit to 100 and fetch titles via oEmbed
-    const videos = []
-    const processedIds = new Set<string>()
-    
-    const categoryPatterns: Record<string, string[]> = {
-      'פרשת השבוע': ['פרשת', 'פרשה', 'בראשית', 'נח', 'לך לך', 'וירא', 'חיי שרה', 'תולדות', 'ויצא', 'וישלח', 'וישב', 'מקץ', 'ויגש', 'ויחי', 'שמות', 'וארא', 'בא', 'בשלח', 'יתרו', 'משפטים', 'תרומה', 'תצוה', 'כי תשא', 'ויקהל', 'פקודי', 'ויקרא', 'צו', 'שמיני', 'תזריע', 'מצורע', 'אחרי מות', 'קדושים', 'אמור', 'בהר', 'בחוקותי', 'במדבר', 'נשא', 'בהעלותך', 'שלח', 'קרח', 'חוקת', 'בלק', 'פינחס', 'מטות', 'מסעי', 'דברים', 'ואתחנן', 'עקב', 'ראה', 'שופטים', 'כי תצא', 'כי תבוא', 'נצבים', 'וילך', 'האזינו', 'וזאת הברכה'],
-      'הלכה': ['הלכה', 'הלכות', 'דין', 'שבת', 'כשרות', 'תפילה', 'ברכות', 'שולחן ערוך', 'ש"ע', 'קיצור'],
-      'מוסר': ['מוסר', 'מידות', 'אמונה', 'ביטחון', 'תשובה', 'עבודת ה', 'חינוך', 'יסוד'],
-      'חגים': ['ראש השנה', 'יום כיפור', 'סוכות', 'פסח', 'שבועות', 'פורים', 'חנוכה', 'ט באב', 'תשעה באב', 'ל"ג בעומר', 'ט"ו בשבט'],
-      'זוהר וקבלה': ['זוהר', 'קבלה', 'סוד', 'תיקון', 'אור החיים'],
-      'הילולות צדיקים': ['הילולת', 'הילולא', 'זיע', 'זיע"א', 'רבי', 'האדמו"ר'],
-    }
-
-    // Batch fetch titles using Promise.all for speed
-    const batchSize = 10
-    for (let i = 0; i < allVideos.length && videos.length < 100; i += batchSize) {
-      const batch = allVideos.slice(i, i + batchSize).filter(v => !processedIds.has(v.id))
-      
-      const titlePromises = batch.map(async (video) => {
-        if (video.title && video.title.length > 3) {
-          return { id: video.id, title: video.title }
-        }
-        
-        try {
-          const url = `https://www.youtube.com/watch?v=${video.id}`
-          const oembedResponse = await fetch(`https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`, {
-            signal: AbortSignal.timeout(5000)
-          })
-          if (oembedResponse.ok) {
-            const oembedData = await oembedResponse.json()
-            return { id: video.id, title: oembedData.title || '' }
-          }
-        } catch (e) {
-          // Ignore timeout errors
-        }
-        return { id: video.id, title: '' }
-      })
-
-      const results = await Promise.all(titlePromises)
-      
-      for (const result of results) {
-        if (processedIds.has(result.id)) continue
-        if (videos.length >= 100) break
-        
-        processedIds.add(result.id)
-        
-        let title = result.title || `שיעור מהרב אורן נזרית`
-        let category = 'כללי'
+        // Skip private/deleted videos
+        if (item.snippet.title === 'Private video' || item.snippet.title === 'Deleted video') continue
 
         // Decode HTML entities
-        title = title
+        let title = item.snippet.title
           .replace(/&amp;/g, '&')
           .replace(/&lt;/g, '<')
           .replace(/&gt;/g, '>')
           .replace(/&quot;/g, '"')
           .replace(/&#39;/g, "'")
 
-        // Categorize based on title
-        for (const [cat, patterns] of Object.entries(categoryPatterns)) {
-          if (patterns.some(pattern => title.includes(pattern))) {
-            category = cat
-            break
-          }
-        }
-
-        videos.push({
-          youtube_url: `https://www.youtube.com/watch?v=${result.id}`,
+        allVideos.push({
+          youtube_url: `https://www.youtube.com/watch?v=${videoId}`,
           title,
+          description: item.snippet.description?.slice(0, 500) || null,
           category,
-          description: null,
-          series: null,
+          series: playlist.snippet.title,
+          playlist_id: playlist.id,
+          playlist_name: playlist.snippet.title,
+          published_at: item.snippet.publishedAt,
         })
       }
-      
-      console.log(`Processed batch, total videos: ${videos.length}`)
     }
 
-    console.log(`Final count: ${videos.length} videos ready for import`)
+    console.log(`Total unique videos: ${allVideos.length}`)
 
-    if (videos.length > 0) {
-      // Delete existing lessons
-      const { error: deleteError } = await supabase.from('lessons').delete().neq('id', '00000000-0000-0000-0000-000000000000')
-      if (deleteError) {
-        console.error('Delete error:', deleteError)
-      }
-      
-      // Insert new videos
-      const { error: insertError } = await supabase.from('lessons').insert(videos)
-      if (insertError) {
-        console.error('Insert error:', insertError)
-        throw insertError
+    if (allVideos.length > 0) {
+      // Clear existing lessons
+      const { error: deleteError } = await supabase
+        .from('lessons')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000')
+
+      if (deleteError) console.error('Delete error:', deleteError)
+
+      // Insert in batches of 100
+      for (let i = 0; i < allVideos.length; i += 100) {
+        const batch = allVideos.slice(i, i + 100)
+        const { error: insertError } = await supabase.from('lessons').insert(batch)
+        if (insertError) {
+          console.error(`Insert error batch ${i}:`, insertError)
+          throw insertError
+        }
+        console.log(`Inserted batch ${i / 100 + 1} (${batch.length} videos)`)
       }
     }
 
-    // Return summary by category
+    // Build category summary
     const categoryCounts: Record<string, number> = {}
-    for (const video of videos) {
-      categoryCounts[video.category] = (categoryCounts[video.category] || 0) + 1
+    const playlistCounts: Record<string, number> = {}
+    for (const v of allVideos) {
+      categoryCounts[v.category] = (categoryCounts[v.category] || 0) + 1
+      playlistCounts[v.playlist_name] = (playlistCounts[v.playlist_name] || 0) + 1
     }
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        imported: videos.length, 
+      JSON.stringify({
+        success: true,
+        imported: allVideos.length,
+        playlists: playlists.length,
         categories: categoryCounts,
-        sampleVideos: videos.slice(0, 5) 
+        playlistCounts,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
-
   } catch (error) {
     console.error('Error importing videos:', error)
     return new Response(

@@ -11,6 +11,7 @@ const navLinks = [
   { href: "/", label: "בית" },
   { href: "/lessons", label: "שיעורים" },
   { href: "/shop", label: "חנות" },
+  { href: "/articles", label: "מאמרים" },
   { href: "/podcasts", label: "פודקאסט" },
   { href: "/about", label: "אודות" },
   { href: "/donate", label: "תרומות" },

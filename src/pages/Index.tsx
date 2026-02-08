@@ -206,6 +206,77 @@ const Index = () => {
       </section>
 
 
+      {/* Recent Lessons Grid */}
+      {recentLessons && recentLessons.lessons.length > 1 && (
+        <section className="py-12 md:py-16 bg-black/30 backdrop-blur-sm">
+          <div className="container mx-auto px-4">
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-2xl md:text-3xl font-bold text-white">
+                שיעורים אחרונים
+              </h2>
+              <Link to="/lessons" className="text-gold hover:text-gold/80 transition-colors inline-flex items-center gap-1">
+                לכל השיעורים
+                <ArrowLeft className="w-4 h-4" />
+              </Link>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {recentLessons.lessons.slice(1, 5).map((lesson) => (
+                <VideoCard
+                  key={lesson.id}
+                  id={lesson.id}
+                  title={lesson.title}
+                  youtubeUrl={lesson.youtube_url}
+                  category={lesson.category}
+                  description={lesson.description || undefined}
+                  createdAt={lesson.created_at}
+                />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Community Activities Section */}
+      <section className="py-12 md:py-16">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-10">
+            <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">
+              הפעילות שלנו
+            </h2>
+            <p className="text-white/70">
+              מרכז קהילתי לתורה ולקהילה
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-5xl mx-auto">
+            {communityActivities.map((activity) => (
+              <CategoryCard key={activity.title} {...activity} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Categories Section */}
+      <section className="py-12 md:py-16 bg-black/20">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-10">
+            <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">
+              קטגוריות שיעורים
+            </h2>
+            <p className="text-white/70">
+              בחרו את הנושא שמעניין אתכם
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 max-w-6xl mx-auto">
+            {categories.map((category) => (
+              <CategoryCard key={category.title} {...category} />
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Building Campaign Section */}
       <section className="py-12 md:py-16 bg-black/30 backdrop-blur-sm">
         <div className="container mx-auto px-4">
@@ -251,77 +322,6 @@ const Index = () => {
           </div>
         </div>
       </section>
-
-      {/* Community Activities Section */}
-      <section className="py-12 md:py-16">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-10">
-            <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">
-              הפעילות שלנו
-            </h2>
-            <p className="text-white/70">
-              מרכז קהילתי לתורה ולקהילה
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-5xl mx-auto">
-            {communityActivities.map((activity) => (
-              <CategoryCard key={activity.title} {...activity} />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Categories Section */}
-      <section className="py-12 md:py-16 bg-black/20">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-10">
-            <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">
-              קטגוריות שיעורים
-            </h2>
-            <p className="text-white/70">
-              בחרו את הנושא שמעניין אתכם
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 max-w-6xl mx-auto">
-            {categories.map((category) => (
-              <CategoryCard key={category.title} {...category} />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Recent Lessons Grid */}
-      {recentLessons && recentLessons.lessons.length > 1 && (
-        <section className="py-12 md:py-16">
-          <div className="container mx-auto px-4">
-            <div className="flex items-center justify-between mb-8">
-              <h2 className="text-2xl md:text-3xl font-bold text-white">
-                שיעורים אחרונים
-              </h2>
-              <Link to="/lessons" className="text-gold hover:text-gold/80 transition-colors inline-flex items-center gap-1">
-                לכל השיעורים
-                <ArrowLeft className="w-4 h-4" />
-              </Link>
-            </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {recentLessons.lessons.slice(1, 5).map((lesson) => (
-                <VideoCard
-                  key={lesson.id}
-                  id={lesson.id}
-                  title={lesson.title}
-                  youtubeUrl={lesson.youtube_url}
-                  category={lesson.category}
-                  description={lesson.description || undefined}
-                  createdAt={lesson.created_at}
-                />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
 
       {/* Listen by Phone Section */}
       <section className="py-12 bg-black/40 backdrop-blur-sm text-white">

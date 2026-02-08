@@ -8,7 +8,6 @@ interface VideoCardProps {
   title: string;
   youtubeUrl: string;
   category: string;
-  description?: string;
   createdAt: string;
   className?: string;
 }
@@ -18,7 +17,6 @@ export function VideoCard({
   title,
   youtubeUrl,
   category,
-  description,
   createdAt,
   className,
 }: VideoCardProps) {
@@ -63,11 +61,6 @@ export function VideoCard({
         <h3 className="font-bold text-foreground line-clamp-2 mb-2 group-hover:text-gold transition-colors">
           {title}
         </h3>
-        {description && (
-          <p className="text-muted-foreground text-sm line-clamp-2 mb-3">
-            {description}
-          </p>
-        )}
         <div className="flex items-center gap-2 text-muted-foreground text-xs">
           <Calendar className="w-3.5 h-3.5" />
           <span>{formattedDate}</span>

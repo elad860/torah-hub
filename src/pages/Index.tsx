@@ -228,7 +228,7 @@ const Index = () => {
                   title={lesson.title}
                   youtubeUrl={lesson.youtube_url}
                   category={lesson.category}
-                  description={lesson.description || undefined}
+                  
                   createdAt={lesson.created_at}
                 />
               ))}

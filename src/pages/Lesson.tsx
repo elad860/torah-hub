@@ -114,6 +114,16 @@ const LessonPage = () => {
                     שתפו בוואטסאפ
                   </Button>
                 </a>
+                <a
+                  href={DONATION_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Button variant="gold" className="gap-2">
+                    <Heart className="w-4 h-4" />
+                    תמכו בהפצת התורה
+                  </Button>
+                </a>
               </div>
             </div>
           </div>

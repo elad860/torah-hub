@@ -45,7 +45,6 @@ export type Database = {
         Row: {
           category: string
           created_at: string
-          description: string | null
           id: string
           playlist_id: string | null
           playlist_name: string | null
@@ -57,7 +56,6 @@ export type Database = {
         Insert: {
           category?: string
           created_at?: string
-          description?: string | null
           id?: string
           playlist_id?: string | null
           playlist_name?: string | null
@@ -69,7 +67,6 @@ export type Database = {
         Update: {
           category?: string
           created_at?: string
-          description?: string | null
           id?: string
           playlist_id?: string | null
           playlist_name?: string | null

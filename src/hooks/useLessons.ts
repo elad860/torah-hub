@@ -5,7 +5,6 @@ export interface Lesson {
   id: string;
   title: string;
   youtube_url: string;
-  description: string | null;
   category: string;
   series: string | null;
   created_at: string;

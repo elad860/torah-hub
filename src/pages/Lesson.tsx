@@ -102,12 +102,6 @@ const LessonPage = () => {
                 {lesson.title}
               </h1>
 
-              {lesson.description && (
-                <p className="text-muted-foreground text-lg leading-relaxed mb-6">
-                  {lesson.description}
-                </p>
-              )}
-
               {/* Action Buttons */}
               <div className="flex flex-wrap gap-3">
                 <a
@@ -118,16 +112,6 @@ const LessonPage = () => {
                   <Button variant="outline" className="gap-2">
                     <Share2 className="w-4 h-4" />
                     שתפו בוואטסאפ
-                  </Button>
-                </a>
-                <a
-                  href={DONATION_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <Button variant="gold" className="gap-2">
-                    <Heart className="w-4 h-4" />
-                    תמכו בהפצת התורה
                   </Button>
                 </a>
               </div>

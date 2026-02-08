@@ -14,22 +14,23 @@ export interface Lesson {
   published_at: string | null;
 }
 
-export function useLessons(category?: string) {
+export function useLessons(category?: string, page = 0, pageSize = 50) {
   return useQuery({
-    queryKey: ["lessons", category],
+    queryKey: ["lessons", category, page, pageSize],
     queryFn: async () => {
       let query = supabase
         .from("lessons")
-        .select("*")
-        .order("published_at", { ascending: false, nullsFirst: false });
+        .select("*", { count: "exact" })
+        .order("published_at", { ascending: false, nullsFirst: false })
+        .range(page * pageSize, (page + 1) * pageSize - 1);
 
       if (category) {
         query = query.eq("category", category);
       }
 
-      const { data, error } = await query;
+      const { data, error, count } = await query;
       if (error) throw error;
-      return data as Lesson[];
+      return { lessons: data as Lesson[], total: count || 0 };
     },
   });
 }
@@ -111,6 +112,41 @@ export function usePlaylists() {
         }
       }
       return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
+    },
+  });
+}
+
+interface FilteredLessonsParams {
+  category?: string | null;
+  playlistId?: string | null;
+  search?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export function useFilteredLessons(params: FilteredLessonsParams) {
+  const { category, playlistId, search, dateFrom, dateTo, page = 0, pageSize = 48 } = params;
+
+  return useQuery({
+    queryKey: ["filtered-lessons", category, playlistId, search, dateFrom, dateTo, page, pageSize],
+    queryFn: async () => {
+      let query = supabase
+        .from("lessons")
+        .select("*", { count: "exact" })
+        .order("published_at", { ascending: false, nullsFirst: false })
+        .range(page * pageSize, (page + 1) * pageSize - 1);
+
+      if (category) query = query.eq("category", category);
+      if (playlistId) query = query.eq("playlist_id", playlistId);
+      if (search) query = query.ilike("title", `%${search}%`);
+      if (dateFrom) query = query.gte("published_at", dateFrom);
+      if (dateTo) query = query.lte("published_at", dateTo);
+
+      const { data, error, count } = await query;
+      if (error) throw error;
+      return { lessons: data as Lesson[], total: count || 0 };
     },
   });
 }

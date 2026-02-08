@@ -75,6 +75,27 @@ export function useLatestLesson() {
   });
 }
 
+export function useLatestParshaLesson() {
+  return useQuery({
+    queryKey: ["latest-parsha-lesson"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("lessons")
+        .select("*")
+        .or("title.ilike.%פרשת%,title.ilike.%פרשה%")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) {
+        throw error;
+      }
+
+      return data as Lesson | null;
+    },
+  });
+}
+
 export function useCategories() {
   return useQuery({
     queryKey: ["categories"],

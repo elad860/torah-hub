@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { YouTubeEmbed } from "@/components/YouTubeEmbed";
 import { CategoryCard } from "@/components/CategoryCard";
 import { VideoCard } from "@/components/VideoCard";
-import { useLatestLesson, useLessons } from "@/hooks/useLessons";
+import { useLatestLesson, useLessons, useLatestParshaLesson } from "@/hooks/useLessons";
 import rabbiBanner from "@/assets/rabbi-banner.png";
 import rabbiHero from "@/assets/rabbi-hero.png";
 
@@ -112,6 +112,7 @@ const communityActivities = [
 const Index = () => {
   const { data: latestLesson, isLoading } = useLatestLesson();
   const { data: recentLessons } = useLessons();
+  const { data: parshaLesson } = useLatestParshaLesson();
 
   return (
     <Layout>
@@ -162,6 +163,22 @@ const Index = () => {
                   </Button>
                 </a>
               </div>
+
+              {/* Latest Parsha Video */}
+              {parshaLesson && (
+                <div className="mt-8 animate-fade-up" style={{ animationDelay: "0.4s" }}>
+                  <div className="rounded-2xl overflow-hidden border-2 border-gold/40 bg-[#0a1628]/80 backdrop-blur-md shadow-2xl max-w-2xl">
+                    <div className="bg-gradient-to-r from-[#0a1628] to-[#162a50] px-5 py-3 flex items-center gap-3 border-b border-gold/30">
+                      <Play className="w-5 h-5 text-gold" />
+                      <h3 className="text-gold font-bold text-lg">שיעור פרשת השבוע האחרון</h3>
+                    </div>
+                    <div className="p-3">
+                      <YouTubeEmbed url={parshaLesson.youtube_url} title={parshaLesson.title} />
+                      <p className="text-white/90 text-sm mt-3 px-1 font-medium truncate">{parshaLesson.title}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
             
             {/* Rabbi Photo in Circle - Left side */}

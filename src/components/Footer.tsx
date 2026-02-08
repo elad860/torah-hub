@@ -38,6 +38,9 @@ export function Footer() {
               <Link to="/shop" className="text-white/70 hover:text-gold transition-colors">
                 חנות הספרים
               </Link>
+              <Link to="/articles" className="text-white/70 hover:text-gold transition-colors">
+                מאמרים
+              </Link>
               <Link to="/podcasts" className="text-white/70 hover:text-gold transition-colors">
                 פודקאסט
               </Link>

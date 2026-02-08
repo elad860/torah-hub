@@ -47,6 +47,9 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          playlist_id: string | null
+          playlist_name: string | null
+          published_at: string | null
           series: string | null
           title: string
           youtube_url: string
@@ -56,6 +59,9 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          playlist_id?: string | null
+          playlist_name?: string | null
+          published_at?: string | null
           series?: string | null
           title: string
           youtube_url: string
@@ -65,6 +71,9 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          playlist_id?: string | null
+          playlist_name?: string | null
+          published_at?: string | null
           series?: string | null
           title?: string
           youtube_url?: string

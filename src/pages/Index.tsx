@@ -166,15 +166,15 @@ const Index = () => {
 
               {/* Latest Parsha Video */}
               {parshaLesson && (
-                <div className="mt-8 animate-fade-up" style={{ animationDelay: "0.4s" }}>
-                  <div className="rounded-2xl overflow-hidden border-2 border-gold/40 bg-[#0a1628]/80 backdrop-blur-md shadow-2xl max-w-2xl">
-                    <div className="bg-gradient-to-r from-[#0a1628] to-[#162a50] px-5 py-3 flex items-center gap-3 border-b border-gold/30">
-                      <Play className="w-5 h-5 text-gold" />
-                      <h3 className="text-gold font-bold text-lg">שיעור פרשת השבוע האחרון</h3>
+                <div className="mt-6 animate-fade-up max-w-md" style={{ animationDelay: "0.4s" }}>
+                  <div className="rounded-xl overflow-hidden border border-gold/30 bg-[#0a1628]/80 backdrop-blur-md shadow-lg">
+                    <div className="bg-gradient-to-r from-[#0a1628] to-[#162a50] px-3 py-2 flex items-center gap-2 border-b border-gold/20">
+                      <Play className="w-4 h-4 text-gold" />
+                      <h3 className="text-gold font-bold text-sm">שיעור פרשת השבוע האחרון</h3>
                     </div>
-                    <div className="p-3">
+                    <div className="p-2">
                       <YouTubeEmbed url={parshaLesson.youtube_url} title={parshaLesson.title} />
-                      <p className="text-white/90 text-sm mt-3 px-1 font-medium truncate">{parshaLesson.title}</p>
+                      <p className="text-white/80 text-xs mt-2 px-1 font-medium truncate">{parshaLesson.title}</p>
                     </div>
                   </div>
                 </div>

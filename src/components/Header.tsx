@@ -4,6 +4,7 @@ import { Menu, X, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import rabbiBanner from "@/assets/rabbi-banner.png";
+import { CartDrawer } from "@/components/CartDrawer";
 
 const DONATION_URL = "https://www.matara.pro/nedarimplus/online/?mosad=7005270";
 
@@ -54,18 +55,20 @@ export function Header() {
             ))}
           </nav>
 
-          {/* Donate Button - Desktop */}
-          <a
-            href={DONATION_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hidden md:block"
-          >
-            <Button variant="gold" className="gap-2">
-              <Heart className="w-4 h-4" />
-              לתרומה
-            </Button>
-          </a>
+          {/* Cart & Donate - Desktop */}
+          <div className="hidden md:flex items-center gap-2">
+            <CartDrawer />
+            <a
+              href={DONATION_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Button variant="gold" className="gap-2">
+                <Heart className="w-4 h-4" />
+                לתרומה
+              </Button>
+            </a>
+          </div>
 
           {/* Mobile Menu Button */}
           <button

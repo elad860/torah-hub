@@ -1,14 +1,16 @@
 import { useState, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Search, Filter, X, Calendar as CalendarIcon, ChevronDown } from "lucide-react";
+import { Search, Filter, X, Calendar as CalendarIcon, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { VideoCard } from "@/components/VideoCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { useLessons, useCategories, usePlaylists } from "@/hooks/useLessons";
+import { useFilteredLessons, useCategories, usePlaylists } from "@/hooks/useLessons";
 import { cn } from "@/lib/utils";
+
+const PAGE_SIZE = 48;
 
 const LessonsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -20,36 +22,28 @@ const LessonsPage = () => {
   const [selectedPlaylist, setSelectedPlaylist] = useState<string | null>(playlistParam);
   const [dateFrom, setDateFrom] = useState<Date | undefined>();
   const [dateTo, setDateTo] = useState<Date | undefined>();
+  const [page, setPage] = useState(0);
 
-  const { data: lessons, isLoading } = useLessons();
+  const { data, isLoading } = useFilteredLessons({
+    category: selectedCategory,
+    playlistId: selectedPlaylist,
+    search: searchQuery,
+    dateFrom: dateFrom?.toISOString(),
+    dateTo: dateTo ? new Date(dateTo.getTime() + 86400000).toISOString() : undefined,
+    page,
+    pageSize: PAGE_SIZE,
+  });
+
   const { data: categories } = useCategories();
   const { data: playlists } = usePlaylists();
 
-  const filteredLessons = useMemo(() => {
-    if (!lessons) return [];
-
-    return lessons.filter((lesson) => {
-      const matchesSearch =
-        searchQuery === "" ||
-        lesson.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        lesson.description?.toLowerCase().includes(searchQuery.toLowerCase());
-
-      const matchesCategory =
-        !selectedCategory || lesson.category === selectedCategory;
-
-      const matchesPlaylist =
-        !selectedPlaylist || lesson.playlist_id === selectedPlaylist;
-
-      const lessonDate = new Date(lesson.published_at || lesson.created_at);
-      const matchesDateFrom = !dateFrom || lessonDate >= dateFrom;
-      const matchesDateTo = !dateTo || lessonDate <= new Date(dateTo.getTime() + 86400000);
-
-      return matchesSearch && matchesCategory && matchesPlaylist && matchesDateFrom && matchesDateTo;
-    });
-  }, [lessons, searchQuery, selectedCategory, selectedPlaylist, dateFrom, dateTo]);
+  const lessons = data?.lessons || [];
+  const totalCount = data?.total || 0;
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
   const handleCategoryChange = (category: string | null) => {
     setSelectedCategory(category);
+    setPage(0);
     const params: Record<string, string> = {};
     if (category) params.category = category;
     if (selectedPlaylist) params.playlist = selectedPlaylist;
@@ -58,6 +52,7 @@ const LessonsPage = () => {
 
   const handlePlaylistChange = (playlistId: string | null) => {
     setSelectedPlaylist(playlistId);
+    setPage(0);
     const params: Record<string, string> = {};
     if (selectedCategory) params.category = selectedCategory;
     if (playlistId) params.playlist = playlistId;
@@ -70,6 +65,7 @@ const LessonsPage = () => {
     setSelectedPlaylist(null);
     setDateFrom(undefined);
     setDateTo(undefined);
+    setPage(0);
     setSearchParams({});
   };
 
@@ -85,7 +81,7 @@ const LessonsPage = () => {
               ספריית <span className="text-gold">השיעורים</span>
             </h1>
             <p className="text-primary-foreground/80 text-lg">
-              מאות שיעורי וידאו בנושאים מגוונים מערוץ היוטיוב של הרב
+              {totalCount > 0 ? `${totalCount.toLocaleString()} שיעורי וידאו בנושאים מגוונים` : "מאות שיעורי וידאו בנושאים מגוונים"}
             </p>
           </div>
         </div>
@@ -96,19 +92,17 @@ const LessonsPage = () => {
         <div className="container mx-auto px-4 space-y-3">
           {/* Row 1: Search + Date */}
           <div className="flex flex-col md:flex-row gap-3 items-center">
-            {/* Search */}
             <div className="relative w-full md:w-80">
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 type="search"
                 placeholder="חיפוש שיעורים..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => { setSearchQuery(e.target.value); setPage(0); }}
                 className="pr-9 h-9 text-sm"
               />
             </div>
 
-            {/* Date From */}
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline" size="sm" className={cn("gap-2 text-xs", dateFrom && "border-gold text-gold")}>
@@ -118,11 +112,10 @@ const LessonsPage = () => {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
-                <Calendar mode="single" selected={dateFrom} onSelect={setDateFrom} />
+                <Calendar mode="single" selected={dateFrom} onSelect={(d) => { setDateFrom(d); setPage(0); }} />
               </PopoverContent>
             </Popover>
 
-            {/* Date To */}
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline" size="sm" className={cn("gap-2 text-xs", dateTo && "border-gold text-gold")}>
@@ -132,7 +125,7 @@ const LessonsPage = () => {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
-                <Calendar mode="single" selected={dateTo} onSelect={setDateTo} />
+                <Calendar mode="single" selected={dateTo} onSelect={(d) => { setDateTo(d); setPage(0); }} />
               </PopoverContent>
             </Popover>
 
@@ -146,7 +139,6 @@ const LessonsPage = () => {
 
           {/* Row 2: Category + Playlist filters */}
           <div className="flex flex-col md:flex-row gap-3">
-            {/* Categories */}
             <div className="flex items-center gap-2 flex-wrap">
               <Filter className="w-4 h-4 text-muted-foreground" />
               <Button
@@ -170,7 +162,6 @@ const LessonsPage = () => {
               ))}
             </div>
 
-            {/* Playlists dropdown */}
             {playlists && playlists.length > 0 && (
               <Popover>
                 <PopoverTrigger asChild>
@@ -226,13 +217,13 @@ const LessonsPage = () => {
                 </div>
               ))}
             </div>
-          ) : filteredLessons.length > 0 ? (
+          ) : lessons.length > 0 ? (
             <>
               <p className="text-muted-foreground mb-6 text-sm">
-                נמצאו {filteredLessons.length} שיעורים
+                {totalCount.toLocaleString()} שיעורים {hasActiveFilters ? "נמצאו" : ""} • עמוד {page + 1} מתוך {totalPages}
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {filteredLessons.map((lesson) => (
+                {lessons.map((lesson) => (
                   <VideoCard
                     key={lesson.id}
                     id={lesson.id}
@@ -244,21 +235,42 @@ const LessonsPage = () => {
                   />
                 ))}
               </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-3 mt-10">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={page === 0}
+                    onClick={() => setPage(p => p - 1)}
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                    הקודם
+                  </Button>
+                  <span className="text-sm text-muted-foreground">
+                    {page + 1} / {totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={page >= totalPages - 1}
+                    onClick={() => setPage(p => p + 1)}
+                  >
+                    הבא
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
+                </div>
+              )}
             </>
           ) : (
             <div className="text-center py-16">
               <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-muted flex items-center justify-center">
                 <Search className="w-10 h-10 text-muted-foreground" />
               </div>
-              <h2 className="text-xl font-bold text-foreground mb-2">
-                לא נמצאו שיעורים
-              </h2>
-              <p className="text-muted-foreground mb-6">
-                נסו לחפש מילים אחרות או לבחור קטגוריה אחרת
-              </p>
-              <Button variant="outline" onClick={clearAll}>
-                נקה חיפוש וסינון
-              </Button>
+              <h2 className="text-xl font-bold text-foreground mb-2">לא נמצאו שיעורים</h2>
+              <p className="text-muted-foreground mb-6">נסו לחפש מילים אחרות או לבחור קטגוריה אחרת</p>
+              <Button variant="outline" onClick={clearAll}>נקה חיפוש וסינון</Button>
             </div>
           )}
         </div>

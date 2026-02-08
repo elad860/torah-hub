@@ -293,7 +293,7 @@ const Index = () => {
       </section>
 
       {/* Recent Lessons Grid */}
-      {recentLessons && recentLessons.length > 1 && (
+      {recentLessons && recentLessons.lessons.length > 1 && (
         <section className="py-12 md:py-16">
           <div className="container mx-auto px-4">
             <div className="flex items-center justify-between mb-8">
@@ -307,7 +307,7 @@ const Index = () => {
             </div>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {recentLessons.slice(1, 5).map((lesson) => (
+              {recentLessons.lessons.slice(1, 5).map((lesson) => (
                 <VideoCard
                   key={lesson.id}
                   id={lesson.id}

@@ -111,7 +111,6 @@ Deno.serve(async (req) => {
     const allVideos: Array<{
       youtube_url: string
       title: string
-      description: string | null
       category: string
       series: string | null
       playlist_id: string
@@ -145,7 +144,6 @@ Deno.serve(async (req) => {
         allVideos.push({
           youtube_url: `https://www.youtube.com/watch?v=${videoId}`,
           title,
-          description: item.snippet.description?.slice(0, 500) || null,
           category,
           series: playlist.snippet.title,
           playlist_id: playlist.id,

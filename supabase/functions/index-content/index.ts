@@ -15,17 +15,12 @@ function toDirectUrl(url: string): string {
   return url
 }
 
-// Check if URL points to an actual document (not a folder listing)
+// Check if URL points to an actual document we can extract text from
 function isIndexableUrl(url: string): boolean {
   // Google Drive single file links - these are PDFs we can extract
   if (url.includes('drive.google.com/file/d/')) return true
-  // OneDrive single file links (not folders)
-  if (url.includes('1drv.ms/b/')) return true // /b/ = single file
-  // Skip OneDrive folder links (/f/ = folder)
-  if (url.includes('1drv.ms/f/')) return false
-  // Skip generic OneDrive/SharePoint links that are usually folders
-  if (url.includes('1drv.ms') || url.includes('onedrive')) return false
-  return true
+  // Skip all OneDrive links - Firecrawl can't extract PDF content from them
+  return false
 }
 
 async function extractTextFromUrl(url: string, firecrawlKey: string): Promise<string | null> {

@@ -5,88 +5,63 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Parse CSV content manually (handles quoted fields with commas)
-function parseCSV(text: string): string[][] {
+// Parse HTML table from Google Sheets export
+function parseHTMLTable(html: string): string[][] {
   const rows: string[][] = []
-  let current = ''
-  let inQuotes = false
-  let row: string[] = []
-
-  for (let i = 0; i < text.length; i++) {
-    const ch = text[i]
-    if (inQuotes) {
-      if (ch === '"' && text[i + 1] === '"') {
-        current += '"'
-        i++
-      } else if (ch === '"') {
-        inQuotes = false
-      } else {
-        current += ch
-      }
-    } else {
-      if (ch === '"') {
-        inQuotes = true
-      } else if (ch === ',') {
-        row.push(current.trim())
-        current = ''
-      } else if (ch === '\n' || (ch === '\r' && text[i + 1] === '\n')) {
-        row.push(current.trim())
-        current = ''
-        if (row.some(cell => cell.length > 0)) rows.push(row)
-        row = []
-        if (ch === '\r') i++
-      } else {
-        current += ch
-      }
+  
+  // Find all <tr> elements
+  const trRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/gi
+  let trMatch
+  while ((trMatch = trRegex.exec(html)) !== null) {
+    const rowHtml = trMatch[1]
+    const cells: string[] = []
+    
+    // Find all <td> elements in this row
+    const tdRegex = /<td[^>]*>([\s\S]*?)<\/td>/gi
+    let tdMatch
+    while ((tdMatch = tdRegex.exec(rowHtml)) !== null) {
+      cells.push(tdMatch[1])
     }
+    
+    if (cells.length > 0) rows.push(cells)
   }
-  row.push(current.trim())
-  if (row.some(cell => cell.length > 0)) rows.push(row)
-
+  
   return rows
 }
 
-// Extract URL from text - handles plain URLs and hyperlink formulas
-function extractUrl(cell: string): string | null {
-  if (!cell || cell.trim().length === 0) return null
+// Extract URL from HTML cell content (preserves <a href> links)
+function extractUrlFromHtml(cellHtml: string): { url: string | null, text: string } {
+  const linkMatch = cellHtml.match(/<a[^>]+href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/)
+  if (linkMatch) {
+    // Clean up URL (Google redirect)
+    let url = linkMatch[1]
+    // Google Sheets wraps links in redirects
+    const googleRedirect = url.match(/[?&]q=(https?[^&]+)/)
+    if (googleRedirect) {
+      url = decodeURIComponent(googleRedirect[1])
+    }
+    const text = linkMatch[2].replace(/<[^>]+>/g, '').trim()
+    return { url, text }
+  }
   
-  // Google Sheets HYPERLINK formula: =HYPERLINK("url","text")
-  const hyperlinkMatch = cell.match(/=HYPERLINK\("([^"]+)"/)
-  if (hyperlinkMatch) return hyperlinkMatch[1]
-  
-  // Plain URL anywhere in the cell
-  const urlMatch = cell.match(/(https?:\/\/[^\s,)"]+)/)
-  if (urlMatch) return urlMatch[1]
-  
-  return null
+  // Plain text, no link
+  const plainText = cellHtml.replace(/<[^>]+>/g, '').trim()
+  return { url: null, text: plainText }
 }
 
 function isYouTubeUrl(url: string): boolean {
   return url.includes('youtube.com') || url.includes('youtu.be')
 }
 
-function isAudioLink(cell: string): boolean {
-  const text = cell.toLowerCase()
-  return text.includes('לשמיעת') || text.includes('שמיעה') || text.includes('audio') || text.includes('לשמיעה')
+function isAudioLink(text: string): boolean {
+  return text.includes('לשמיעת') || text.includes('שמיעה') || text.includes('לשמיעה')
 }
 
-function isDownloadLink(cell: string): boolean {
-  const text = cell.toLowerCase()
-  return text.includes('להורדת') || text.includes('הורדה') || text.includes('גליון') || text.includes('pdf') || text.includes('download') || text.includes('להורדה')
-}
-
-// Check if a row is a category header
-// Header rows have text in the first column and NO URLs in any other column
-function isHeaderRow(row: string[]): boolean {
-  if (!row[0] || row[0].trim().length === 0) return false
-  // If first cell contains a URL, it's not a header
-  if (extractUrl(row[0])) return false
-  // Check if any other cell has a URL
-  for (let i = 1; i < row.length; i++) {
-    if (row[i] && extractUrl(row[i])) return false
-  }
-  // Must have non-trivial text in first col
-  return row[0].trim().length > 1
+function isHeaderRow(cells: Array<{url: string | null, text: string}>): boolean {
+  if (!cells[0] || cells[0].text.length === 0) return false
+  if (cells[0].url) return false
+  // No URLs in any cell
+  return cells.slice(1).every(c => !c.url)
 }
 
 interface ParsedItem {
@@ -94,7 +69,6 @@ interface ParsedItem {
   category: string
   url: string
   type: 'article' | 'podcast'
-  linkText: string
 }
 
 function parseSheetData(rows: string[][]): ParsedItem[] {
@@ -102,40 +76,32 @@ function parseSheetData(rows: string[][]): ParsedItem[] {
   let currentCategory = 'כללי'
 
   for (const row of rows) {
+    // Parse each cell for URLs and text
+    const parsed = row.map(cell => extractUrlFromHtml(cell))
+    
     // Skip empty rows
-    if (!row[0] || row[0].trim().length === 0) continue
-    // Skip rows that are just URLs
-    if (row[0].startsWith('http')) continue
+    if (!parsed[0] || parsed[0].text.length === 0) continue
+    // Skip metadata rows
+    if (parsed[0].text.includes('ניתן לסייע') || parsed[0].text.includes('נדרים')) continue
 
-    // Check if this is a header/category row
-    if (isHeaderRow(row)) {
-      // Don't use donation/metadata rows as categories
-      const first = row[0].trim()
-      if (first.includes('נדרים') || first.includes('תרומ') || first.includes('ניתן לסייע')) continue
-      currentCategory = first
+    // Check if header row
+    if (isHeaderRow(parsed)) {
+      currentCategory = parsed[0].text
       continue
     }
 
-    const title = row[0].trim()
-    // Skip if title looks like metadata
-    if (title.includes('נדרים') || title.includes('ניתן לסייע')) continue
+    const title = parsed[0].text
 
-    // Process each cell for URLs
-    for (let i = 1; i < row.length; i++) {
-      const cell = row[i]
-      if (!cell || cell.trim().length === 0) continue
-
-      const url = extractUrl(cell)
+    // Process cells with URLs
+    for (let i = 1; i < parsed.length; i++) {
+      const { url, text } = parsed[i]
       if (!url) continue
-
-      // Skip YouTube links
       if (isYouTubeUrl(url)) continue
 
-      // Determine type
-      if (isAudioLink(cell)) {
-        items.push({ title, category: currentCategory, url, type: 'podcast', linkText: cell })
+      if (isAudioLink(text)) {
+        items.push({ title, category: currentCategory, url, type: 'podcast' })
       } else {
-        items.push({ title, category: currentCategory, url, type: 'article', linkText: cell })
+        items.push({ title, category: currentCategory, url, type: 'article' })
       }
     }
   }
@@ -154,36 +120,25 @@ Deno.serve(async (req) => {
 
     console.log('Parsing sheet:', sheetUrl, 'from video:', sourceVideoId)
 
-    // Extract Google Sheets ID from URL
     const sheetIdMatch = sheetUrl.match(/\/d\/([a-zA-Z0-9_-]+)/)
     if (!sheetIdMatch) throw new Error('Invalid Google Sheets URL: ' + sheetUrl)
     const sheetId = sheetIdMatch[1]
 
-    // Export as CSV (works for public sheets)
-    const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv`
-    console.log('Fetching CSV from:', csvUrl)
+    // Use HTML export to preserve hyperlinks
+    const htmlUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=html`
+    console.log('Fetching HTML from:', htmlUrl)
 
-    const csvResponse = await fetch(csvUrl, { redirect: 'follow' })
-    if (!csvResponse.ok) {
-      throw new Error(`Failed to fetch sheet (${csvResponse.status}): ${csvResponse.statusText}`)
+    const htmlResponse = await fetch(htmlUrl, { redirect: 'follow' })
+    if (!htmlResponse.ok) {
+      throw new Error(`Failed to fetch sheet (${htmlResponse.status}): ${htmlResponse.statusText}`)
     }
 
-    const csvText = await csvResponse.text()
-    console.log('CSV length:', csvText.length)
+    const htmlText = await htmlResponse.text()
+    console.log('HTML length:', htmlText.length)
 
-    // Parse CSV
-    const rows = parseCSV(csvText)
+    const rows = parseHTMLTable(htmlText)
     console.log('Parsed rows:', rows.length)
 
-    // Debug: log first few rows to understand format
-    if (debug || rows.length > 0) {
-      console.log('Sample rows:')
-      for (let i = 0; i < Math.min(10, rows.length); i++) {
-        console.log(`Row ${i}: [${rows[i].map(c => c.substring(0, 60)).join(' | ')}]`)
-      }
-    }
-
-    // Extract items
     const items = parseSheetData(rows)
     console.log('Extracted items:', items.length, '(articles:', items.filter(i => i.type === 'article').length, ', podcasts:', items.filter(i => i.type === 'podcast').length, ')')
 
@@ -192,8 +147,7 @@ Deno.serve(async (req) => {
         JSON.stringify({
           success: true,
           debug: true,
-          csvPreview: csvText.substring(0, 2000),
-          sampleRows: rows.slice(0, 15),
+          sampleRows: rows.slice(0, 5).map(r => r.map(c => c.substring(0, 200))),
           items: items.slice(0, 20),
           totalRows: rows.length,
           totalItems: items.length,
@@ -202,57 +156,49 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Insert into Supabase
+    // Insert into DB
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    const articles = items
-      .filter(i => i.type === 'article')
-      .map(i => ({
-        title: i.title,
-        content: i.title,
-        category: i.category,
-        download_url: i.url,
-        source_video_id: sourceVideoId || null,
-      }))
-
-    const podcasts = items
-      .filter(i => i.type === 'podcast')
-      .map(i => ({
-        title: i.title,
-        spotify_url: i.url,
-        audio_url: i.url,
-        description: i.category,
-        source_video_id: sourceVideoId || null,
-      }))
-
     let articlesInserted = 0
     let podcastsInserted = 0
 
-    for (const item of articles) {
-      const { data: existing } = await supabase
-        .from('articles')
-        .select('id')
-        .eq('download_url', item.download_url)
-        .limit(1)
-      if (!existing?.length) {
-        const { error } = await supabase.from('articles').insert(item)
-        if (!error) articlesInserted++
-        else console.error('Article insert error:', error)
-      }
-    }
-
-    for (const item of podcasts) {
-      const { data: existing } = await supabase
-        .from('podcasts')
-        .select('id')
-        .eq('audio_url', item.audio_url)
-        .limit(1)
-      if (!existing?.length) {
-        const { error } = await supabase.from('podcasts').insert(item)
-        if (!error) podcastsInserted++
-        else console.error('Podcast insert error:', error)
+    for (const item of items) {
+      if (item.type === 'article') {
+        const { data: existing } = await supabase
+          .from('articles')
+          .select('id')
+          .eq('download_url', item.url)
+          .limit(1)
+        if (!existing?.length) {
+          const { error } = await supabase.from('articles').insert({
+            title: item.title,
+            content: item.title,
+            category: item.category,
+            download_url: item.url,
+            source_video_id: sourceVideoId || null,
+          })
+          if (!error) articlesInserted++
+          else console.error('Article insert error:', error)
+        }
+      } else {
+        const { data: existing } = await supabase
+          .from('podcasts')
+          .select('id')
+          .eq('audio_url', item.url)
+          .limit(1)
+        if (!existing?.length) {
+          const { error } = await supabase.from('podcasts').insert({
+            title: item.title,
+            spotify_url: item.url,
+            audio_url: item.url,
+            description: item.category,
+            source_video_id: sourceVideoId || null,
+          })
+          if (!error) podcastsInserted++
+          else console.error('Podcast insert error:', error)
+        }
       }
     }
 

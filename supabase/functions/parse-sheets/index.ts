@@ -1,6 +1,27 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import * as XLSX from 'https://esm.sh/xlsx@0.18.5'
 
+// Hebrew year calculation
+const ROSH_HASHANA: Record<number, [number, number]> = {
+  2015: [9, 14], 2016: [10, 3], 2017: [9, 21], 2018: [9, 10],
+  2019: [9, 30], 2020: [9, 19], 2021: [9, 7], 2022: [9, 26],
+  2023: [9, 16], 2024: [10, 3], 2025: [9, 23], 2026: [9, 12],
+}
+const HEBREW_NAMES: Record<number, string> = {
+  5775: 'תשע"ה', 5776: 'תשע"ו', 5777: 'תשע"ז', 5778: 'תשע"ח',
+  5779: 'תשע"ט', 5780: 'תש"פ', 5781: 'תשפ"א', 5782: 'תשפ"ב',
+  5783: 'תשפ"ג', 5784: 'תשפ"ד', 5785: 'תשפ"ה', 5786: 'תשפ"ו',
+}
+function calcHebrewYear(dateStr: string): string | null {
+  if (!dateStr) return null
+  const d = new Date(dateStr)
+  const y = d.getFullYear()
+  const rh = ROSH_HASHANA[y]
+  if (!rh) return null
+  const num = d >= new Date(y, rh[0] - 1, rh[1]) ? y + 3761 : y + 3760
+  return HEBREW_NAMES[num] || null
+}
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -129,9 +150,9 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { sheetUrl, sourceVideoId, debug } = await req.json()
+    const { sheetUrl, sourceVideoId, debug, publishedAt } = await req.json()
     if (!sheetUrl) throw new Error('sheetUrl is required')
-
+    const hebrewYear = calcHebrewYear(publishedAt || new Date().toISOString())
     console.log('Parsing sheet:', sheetUrl)
 
     const sheetIdMatch = sheetUrl.match(/\/d\/([a-zA-Z0-9_-]+)/)
@@ -180,6 +201,8 @@ Deno.serve(async (req) => {
             category: item.category,
             download_url: item.url,
             source_video_id: sourceVideoId || null,
+            hebrew_year: hebrewYear,
+            content_text: `${item.title}. קטגוריה: ${item.category}.`,
           })
           if (!error) articlesInserted++
           else console.error('Insert error:', error)
@@ -197,6 +220,8 @@ Deno.serve(async (req) => {
             audio_url: item.url,
             description: item.category,
             source_video_id: sourceVideoId || null,
+            hebrew_year: hebrewYear,
+            content_text: `${item.title}. ${item.category}.`,
           })
           if (!error) podcastsInserted++
           else console.error('Insert error:', error)

@@ -19,6 +19,7 @@ import Newsletters from "./pages/Newsletters";
 import Schedule from "./pages/Schedule";
 import Contact from "./pages/Contact";
 import Podcasts from "./pages/Podcasts";
+import AIAssistant from "./pages/AIAssistant";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();

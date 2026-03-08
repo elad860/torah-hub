@@ -1,11 +1,10 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, Heart } from "lucide-react";
+import { Menu, X, Heart, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import rabbiBanner from "@/assets/rabbi-banner.png";
 import { CartDrawer } from "@/components/CartDrawer";
-import { AISearchBox } from "@/components/AISearchBox";
 
 const DONATION_URL = "https://www.matara.pro/nedarimplus/online/?mosad=7005270";
 

@@ -13,6 +13,11 @@ function isAudioLink(text: string): boolean {
   return text.includes('לשמיעת') || text.includes('שמיעה') || text.includes('לשמיעה')
 }
 
+interface CellData {
+  text: string
+  url: string | null
+}
+
 interface ParsedItem {
   title: string
   category: string
@@ -20,109 +25,91 @@ interface ParsedItem {
   type: 'article' | 'podcast'
 }
 
-// Try multiple export strategies
-async function fetchSheetContent(sheetId: string): Promise<{ rows: string[][], format: string }> {
-  // Strategy 1: Google Sheets API (public access, no auth needed for public sheets)
-  try {
-    const apiUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/A:Z?key=${Deno.env.get('YOUTUBE_API_KEY')}`
-    const res = await fetch(apiUrl)
-    if (res.ok) {
-      const data = await res.json()
-      if (data.values) {
-        console.log('Fetched via Sheets API')
-        return { rows: data.values, format: 'api-plain' }
+// Fetch sheet data with hyperlinks using Google Sheets API
+async function fetchSheetWithHyperlinks(sheetId: string, apiKey: string): Promise<CellData[][]> {
+  // Use includeGridData to get hyperlinks
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}?includeGridData=true&ranges=A:Z&key=${apiKey}`
+  const res = await fetch(url)
+  
+  if (!res.ok) {
+    const text = await res.text()
+    console.error('Sheets API error:', res.status, text)
+    throw new Error(`Sheets API failed (${res.status})`)
+  }
+  
+  const data = await res.json()
+  const rows: CellData[][] = []
+  
+  const sheet = data.sheets?.[0]
+  if (!sheet?.data?.[0]?.rowData) {
+    console.log('No row data found')
+    return rows
+  }
+  
+  for (const rowData of sheet.data[0].rowData) {
+    const cells: CellData[] = []
+    if (rowData.values) {
+      for (const cell of rowData.values) {
+        const text = cell.formattedValue || cell.effectiveValue?.stringValue || ''
+        // Hyperlink can be in cell.hyperlink or in cell.textFormatRuns
+        let url: string | null = cell.hyperlink || null
+        
+        // Also check effectiveFormat for link
+        if (!url && cell.effectiveFormat?.textFormat?.link?.uri) {
+          url = cell.effectiveFormat.textFormat.link.uri
+        }
+        
+        // Check textFormatRuns for inline hyperlinks
+        if (!url && cell.textFormatRuns) {
+          for (const run of cell.textFormatRuns) {
+            if (run.format?.link?.uri) {
+              url = run.format.link.uri
+              break
+            }
+          }
+        }
+        
+        cells.push({ text: text.trim(), url })
       }
     }
-  } catch (e) {
-    console.log('Sheets API failed:', e)
+    rows.push(cells)
   }
-
-  // Strategy 2: TSV export (sometimes works better than CSV for preserving structure)
-  try {
-    const tsvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=tsv`
-    const res = await fetch(tsvUrl, { redirect: 'follow' })
-    if (res.ok) {
-      const text = await res.text()
-      const rows = text.split('\n').map(line => line.split('\t').map(c => c.trim()))
-      console.log('Fetched via TSV export')
-      return { rows, format: 'tsv' }
-    }
-  } catch (e) {
-    console.log('TSV export failed:', e)
-  }
-
-  // Strategy 3: CSV export as fallback
-  const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv`
-  const res = await fetch(csvUrl, { redirect: 'follow' })
-  if (!res.ok) throw new Error(`All export strategies failed (${res.status})`)
-  const text = await res.text()
-  const rows = text.split('\n').map(line => {
-    // Simple CSV parse
-    const cells: string[] = []
-    let current = ''
-    let inQuotes = false
-    for (const ch of line) {
-      if (inQuotes) {
-        if (ch === '"') inQuotes = false
-        else current += ch
-      } else {
-        if (ch === '"') inQuotes = true
-        else if (ch === ',') { cells.push(current.trim()); current = '' }
-        else current += ch
-      }
-    }
-    cells.push(current.trim())
-    return cells
-  })
-  console.log('Fetched via CSV export')
-  return { rows, format: 'csv' }
+  
+  return rows
 }
 
-function parseSheetRows(rows: string[][]): ParsedItem[] {
+function parseSheetData(rows: CellData[][]): ParsedItem[] {
   const items: ParsedItem[] = []
   let currentCategory = 'כללי'
 
   for (const row of rows) {
-    if (!row[0] || row[0].trim().length === 0) continue
-    const firstCell = row[0].trim()
+    if (!row[0] || row[0].text.length === 0) continue
     
     // Skip metadata
-    if (firstCell.includes('ניתן לסייע') || firstCell.includes('נדרים פלוס')) continue
+    if (row[0].text.includes('ניתן לסייע') || row[0].text.includes('נדרים פלוס')) continue
 
-    // Check for URLs in cells
-    const cellUrls: Array<{url: string, text: string}> = []
-    for (let i = 0; i < row.length; i++) {
-      const cell = row[i] || ''
-      // Extract URLs from cell
-      const urlMatches = cell.match(/https?:\/\/[^\s,)"]+/g)
-      if (urlMatches) {
-        for (const url of urlMatches) {
-          cellUrls.push({ url, text: cell })
-        }
-      }
-    }
-
-    // If no URLs found, this might be a header row
-    if (cellUrls.length === 0) {
-      // Check if other cells are empty (header pattern)
-      const otherCellsEmpty = row.slice(1).every(c => !c || c.trim().length === 0 || !c.match(/https?:\/\//))
-      if (otherCellsEmpty && firstCell.length > 1) {
-        currentCategory = firstCell
+    // Check if any non-first cell has a URL
+    const hasUrls = row.slice(1).some(c => c.url)
+    
+    if (!hasUrls) {
+      // Header row
+      if (row[0].text.length > 1 && !row[0].url) {
+        currentCategory = row[0].text
       }
       continue
     }
 
-    // This is a data row with URLs
-    // If the cell text is just "לשמיעת השיעור לחץ כאן" without a URL,
-    // that means the URLs were stripped. In that case we can't extract them.
-    // But if we found URLs, process them
-    for (const { url, text } of cellUrls) {
-      if (isYouTubeUrl(url)) continue
-      
-      if (isAudioLink(text)) {
-        items.push({ title: firstCell, category: currentCategory, url, type: 'podcast' })
+    const title = row[0].text
+
+    for (let i = 1; i < row.length; i++) {
+      const cell = row[i]
+      if (!cell.url) continue
+      if (isYouTubeUrl(cell.url)) continue
+
+      if (isAudioLink(cell.text)) {
+        items.push({ title, category: currentCategory, url: cell.url, type: 'podcast' })
       } else {
-        items.push({ title: firstCell, category: currentCategory, url, type: 'article' })
+        items.push({ title, category: currentCategory, url: cell.url, type: 'article' })
       }
     }
   }
@@ -139,16 +126,19 @@ Deno.serve(async (req) => {
     const { sheetUrl, sourceVideoId, debug } = await req.json()
     if (!sheetUrl) throw new Error('sheetUrl is required')
 
+    const apiKey = Deno.env.get('YOUTUBE_API_KEY')
+    if (!apiKey) throw new Error('YOUTUBE_API_KEY not configured (also used for Sheets API)')
+
     console.log('Parsing sheet:', sheetUrl)
 
     const sheetIdMatch = sheetUrl.match(/\/d\/([a-zA-Z0-9_-]+)/)
     if (!sheetIdMatch) throw new Error('Invalid Google Sheets URL')
     const sheetId = sheetIdMatch[1]
 
-    const { rows, format } = await fetchSheetContent(sheetId)
-    console.log(`Parsed ${rows.length} rows (format: ${format})`)
+    const rows = await fetchSheetWithHyperlinks(sheetId, apiKey)
+    console.log(`Parsed ${rows.length} rows with hyperlink data`)
 
-    const items = parseSheetRows(rows)
+    const items = parseSheetData(rows)
     console.log(`Extracted ${items.length} items (articles: ${items.filter(i => i.type === 'article').length}, podcasts: ${items.filter(i => i.type === 'podcast').length})`)
 
     if (debug) {
@@ -156,8 +146,7 @@ Deno.serve(async (req) => {
         JSON.stringify({
           success: true,
           debug: true,
-          format,
-          sampleRows: rows.slice(0, 10).map(r => r.map(c => (c || '').substring(0, 100))),
+          sampleRows: rows.slice(0, 10).map(r => r.map(c => ({ text: c.text.substring(0, 80), url: c.url }))),
           items: items.slice(0, 30),
           totalRows: rows.length,
           totalItems: items.length,

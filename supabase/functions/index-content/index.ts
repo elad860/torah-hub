@@ -5,13 +5,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Convert share links to Google Drive preview (not download)
+// Use the original URL - Firecrawl handles Google Drive PDFs
 function toDirectUrl(url: string): string {
-  // Google Drive: use the preview URL which renders in browser
-  if (url.includes('drive.google.com/file/d/')) {
-    const fileId = url.match(/\/d\/([a-zA-Z0-9_-]+)/)?.[1]
-    if (fileId) return `https://drive.google.com/file/d/${fileId}/preview`
-  }
   return url
 }
 

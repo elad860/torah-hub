@@ -19,24 +19,30 @@ export type Database = {
           category: string
           content: string
           created_at: string
+          download_url: string | null
           id: string
           image_url: string | null
+          source_video_id: string | null
           title: string
         }
         Insert: {
           category?: string
           content: string
           created_at?: string
+          download_url?: string | null
           id?: string
           image_url?: string | null
+          source_video_id?: string | null
           title: string
         }
         Update: {
           category?: string
           content?: string
           created_at?: string
+          download_url?: string | null
           id?: string
           image_url?: string | null
+          source_video_id?: string | null
           title?: string
         }
         Relationships: []
@@ -109,23 +115,29 @@ export type Database = {
       }
       podcasts: {
         Row: {
+          audio_url: string | null
           created_at: string
           description: string | null
           id: string
+          source_video_id: string | null
           spotify_url: string
           title: string
         }
         Insert: {
+          audio_url?: string | null
           created_at?: string
           description?: string | null
           id?: string
+          source_video_id?: string | null
           spotify_url: string
           title: string
         }
         Update: {
+          audio_url?: string | null
           created_at?: string
           description?: string | null
           id?: string
+          source_video_id?: string | null
           spotify_url?: string
           title?: string
         }

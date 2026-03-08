@@ -32,8 +32,8 @@ async function getUploadsPlaylistId(apiKey: string, channelId: string): Promise<
   return data.items[0].contentDetails.relatedPlaylists.uploads
 }
 
-async function getAllVideoIds(apiKey: string, uploadsPlaylistId: string): Promise<Array<{videoId: string, title: string}>> {
-  const videos: Array<{videoId: string, title: string}> = []
+async function getAllVideosWithDescriptions(apiKey: string, uploadsPlaylistId: string, limit?: number): Promise<Array<{videoId: string, title: string, description: string}>> {
+  const videos: Array<{videoId: string, title: string, description: string}> = []
   let pageToken = ''
 
   do {
@@ -44,58 +44,32 @@ async function getAllVideoIds(apiKey: string, uploadsPlaylistId: string): Promis
       for (const item of data.items) {
         const vid = item.snippet?.resourceId?.videoId
         const title = item.snippet?.title
+        const description = item.snippet?.description || ''
         if (vid && title && title !== 'Private video' && title !== 'Deleted video') {
-          videos.push({ videoId: vid, title })
+          videos.push({ videoId: vid, title, description })
         }
       }
     }
     pageToken = data.nextPageToken || ''
+    if (limit && videos.length >= limit) {
+      return videos.slice(0, limit)
+    }
   } while (pageToken)
 
   return videos
 }
 
-async function getVideoComments(apiKey: string, videoId: string): Promise<string[]> {
-  const comments: string[] = []
-  try {
-    let pageToken = ''
-    do {
-      const url = `${YOUTUBE_API_BASE}/commentThreads?videoId=${videoId}&part=snippet&maxResults=100&key=${apiKey}${pageToken ? `&pageToken=${pageToken}` : ''}`
-      const res = await fetch(url)
-      if (!res.ok) {
-        // Comments might be disabled
-        console.log(`Comments unavailable for ${videoId}: ${res.status}`)
-        return comments
-      }
-      const data = await res.json()
-      if (data.items) {
-        for (const item of data.items) {
-          const text = item.snippet?.topLevelComment?.snippet?.textOriginal || 
-                       item.snippet?.topLevelComment?.snippet?.textDisplay || ''
-          comments.push(text)
-        }
-      }
-      pageToken = data.nextPageToken || ''
-    } while (pageToken)
-  } catch (e) {
-    console.log(`Error fetching comments for ${videoId}:`, e)
-  }
-  return comments
-}
-
-function findSheetUrls(comments: string[]): string[] {
+function findSheetUrlsInDescription(description: string): string[] {
   const urls: string[] = []
-  for (const comment of comments) {
-    // Check if comment contains the trigger text
-    if (!comment.includes(TRIGGER_TEXT)) continue
+  // Check if description contains the trigger text
+  if (!description.includes(TRIGGER_TEXT)) return urls
 
-    // Extract Google Sheets URLs
-    const matches = comment.match(/https:\/\/docs\.google\.com\/spreadsheets\/d\/[a-zA-Z0-9_-]+[^\s)"]*/g)
-    if (matches) {
-      urls.push(...matches)
-    }
+  // Extract Google Sheets URLs
+  const matches = description.match(/https:\/\/docs\.google\.com\/spreadsheets\/d\/[a-zA-Z0-9_-]+[^\s)"\n]*/g)
+  if (matches) {
+    urls.push(...matches)
   }
-  return [...new Set(urls)] // deduplicate
+  return [...new Set(urls)]
 }
 
 Deno.serve(async (req) => {
@@ -111,40 +85,27 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
     const body = await req.json().catch(() => ({}))
-    const mode = body.mode || 'full' // 'full' = scan all, 'recent' = last N videos
-    const recentCount = body.recentCount || 20
+    const mode = body.mode || 'full'
+    const recentCount = body.recentCount || 50
 
     // 1. Get channel info
     console.log('Getting channel ID...')
     const channelId = await getChannelId(apiKey)
     const uploadsPlaylistId = await getUploadsPlaylistId(apiKey, channelId)
-    console.log('Uploads playlist:', uploadsPlaylistId)
 
-    // 2. Get video IDs
-    console.log('Fetching video list...')
-    let videos = await getAllVideoIds(apiKey, uploadsPlaylistId)
-    console.log(`Total videos: ${videos.length}`)
+    // 2. Get videos with descriptions (no extra API calls needed!)
+    console.log('Fetching videos with descriptions...')
+    const limit = mode === 'recent' ? recentCount : undefined
+    const videos = await getAllVideosWithDescriptions(apiKey, uploadsPlaylistId, limit)
+    console.log(`Got ${videos.length} videos`)
 
-    if (mode === 'recent') {
-      videos = videos.slice(0, recentCount)
-      console.log(`Scanning recent ${recentCount} videos`)
-    }
-
-    // 3. Scan comments for each video
+    // 3. Scan descriptions for sheet URLs
     const results: ScanResult[] = []
     let scanned = 0
-    let quotaUsed = 0
 
     for (const video of videos) {
       scanned++
-      if (scanned % 50 === 0) {
-        console.log(`Scanned ${scanned}/${videos.length} videos...`)
-      }
-
-      const comments = await getVideoComments(apiKey, video.videoId)
-      quotaUsed++ // Each commentThreads.list = 1 unit
-
-      const sheetUrls = findSheetUrls(comments)
+      const sheetUrls = findSheetUrlsInDescription(video.description)
       for (const sheetUrl of sheetUrls) {
         results.push({
           videoId: video.videoId,
@@ -152,16 +113,11 @@ Deno.serve(async (req) => {
           sheetUrl,
         })
       }
-
-      // Rate limiting: small delay every 10 videos
-      if (scanned % 10 === 0) {
-        await new Promise(r => setTimeout(r, 100))
-      }
     }
 
     console.log(`Scan complete. Found ${results.length} sheets across ${scanned} videos.`)
 
-    // 4. For each unique sheet URL, call parse-sheets function
+    // 4. Parse unique sheets
     const uniqueSheets = new Map<string, { videoId: string, videoTitle: string }>()
     for (const r of results) {
       if (!uniqueSheets.has(r.sheetUrl)) {
@@ -194,13 +150,12 @@ Deno.serve(async (req) => {
         success: true,
         videosScanned: scanned,
         sheetsFound: uniqueSheets.size,
-        estimatedQuotaUsed: quotaUsed,
         parseResults,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
-    console.error('Error scanning comments:', error)
+    console.error('Error scanning descriptions:', error)
     return new Response(
       JSON.stringify({ success: false, error: error instanceof Error ? error.message : 'Unknown error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

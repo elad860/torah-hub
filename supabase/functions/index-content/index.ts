@@ -110,8 +110,11 @@ Deno.serve(async (req) => {
       console.log(`Found ${articles?.length || 0} articles to index`)
 
       for (const article of (articles || [])) {
-        if (!article.download_url) continue
-        console.log(`Indexing article: \"${article.title}\" - ${article.download_url}`)
+        if (!article.download_url || !isIndexableUrl(article.download_url)) {
+          console.log(`Skipping non-indexable: ${article.download_url}`)
+          continue
+        }
+        console.log(`Indexing article: "${article.title}" - ${article.download_url}`)
         
         const text = await extractTextFromUrl(article.download_url, firecrawlKey)
         if (text) {

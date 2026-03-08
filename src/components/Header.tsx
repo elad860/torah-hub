@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import rabbiBanner from "@/assets/rabbi-banner.png";
 import { CartDrawer } from "@/components/CartDrawer";
+import { AISearchBox } from "@/components/AISearchBox";
 
 const DONATION_URL = "https://www.matara.pro/nedarimplus/online/?mosad=7005270";
 
@@ -55,8 +56,9 @@ export function Header() {
             ))}
           </nav>
 
-          {/* Cart & Donate - Desktop */}
+          {/* AI Search, Cart & Donate - Desktop */}
           <div className="hidden md:flex items-center gap-2">
+            <AISearchBox />
             <CartDrawer />
             <a
               href={DONATION_URL}

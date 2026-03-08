@@ -1,89 +1,17 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import * as XLSX from 'https://esm.sh/xlsx@0.18.5'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Parse CSV content manually (handles quoted fields with commas)
-function parseCSV(text: string): string[][] {
-  const rows: string[][] = []
-  let current = ''
-  let inQuotes = false
-  let row: string[] = []
-
-  for (let i = 0; i < text.length; i++) {
-    const ch = text[i]
-    if (inQuotes) {
-      if (ch === '"' && text[i + 1] === '"') {
-        current += '"'
-        i++
-      } else if (ch === '"') {
-        inQuotes = false
-      } else {
-        current += ch
-      }
-    } else {
-      if (ch === '"') {
-        inQuotes = true
-      } else if (ch === ',') {
-        row.push(current.trim())
-        current = ''
-      } else if (ch === '\n' || (ch === '\r' && text[i + 1] === '\n')) {
-        row.push(current.trim())
-        current = ''
-        if (row.some(cell => cell.length > 0)) rows.push(row)
-        row = []
-        if (ch === '\r') i++
-      } else {
-        current += ch
-      }
-    }
-  }
-  // Last row
-  row.push(current.trim())
-  if (row.some(cell => cell.length > 0)) rows.push(row)
-
-  return rows
-}
-
-// Extract URL from markdown-style link or plain URL
-function extractUrl(cell: string): string | null {
-  // Markdown link: [text](url)
-  const mdMatch = cell.match(/\[.*?\]\((https?:\/\/[^\s)]+)\)/)
-  if (mdMatch) return mdMatch[1]
-  // Plain URL
-  const urlMatch = cell.match(/(https?:\/\/[^\s,]+)/)
-  if (urlMatch) return urlMatch[1]
-  return null
-}
-
-// Extract link text from markdown link
-function extractLinkText(cell: string): string | null {
-  const mdMatch = cell.match(/\[(.*?)\]\(/)
-  if (mdMatch) return mdMatch[1]
-  return null
-}
-
 function isYouTubeUrl(url: string): boolean {
   return url.includes('youtube.com') || url.includes('youtu.be')
 }
 
-function isAudioLink(cell: string): boolean {
-  const text = cell.toLowerCase()
-  return text.includes('לשמיעת') || text.includes('שמיעה') || text.includes('audio')
-}
-
-function isDownloadLink(cell: string): boolean {
-  const text = cell.toLowerCase()
-  return text.includes('להורדת') || text.includes('הורדה') || text.includes('גליון') || text.includes('pdf') || text.includes('download')
-}
-
-function isHeaderRow(row: string[]): boolean {
-  // A header row has content only in the first column (or first is non-empty, rest are empty)
-  if (!row[0] || row[0].trim().length === 0) return false
-  const otherCells = row.slice(1)
-  return otherCells.every(cell => !cell || cell.trim().length === 0 || !extractUrl(cell))
+function isAudioLink(text: string): boolean {
+  return text.includes('לשמיעת') || text.includes('שמיעה') || text.includes('לשמיעה')
 }
 
 interface ParsedItem {
@@ -93,41 +21,84 @@ interface ParsedItem {
   type: 'article' | 'podcast'
 }
 
-function parseSheetData(rows: string[][]): ParsedItem[] {
+// Download .xlsx file from Google Drive and parse with hyperlinks
+async function fetchAndParseXlsx(sheetId: string): Promise<{ rows: Array<Array<{text: string, url: string | null}>> }> {
+  // Google Drive direct download for public files
+  const downloadUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=xlsx`
+  console.log('Downloading xlsx from:', downloadUrl)
+  
+  const res = await fetch(downloadUrl, { redirect: 'follow' })
+  if (!res.ok) {
+    throw new Error(`Failed to download xlsx (${res.status})`)
+  }
+  
+  const arrayBuffer = await res.arrayBuffer()
+  console.log('Downloaded bytes:', arrayBuffer.byteLength)
+  
+  const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array' })
+  const sheetName = workbook.SheetNames[0]
+  const sheet = workbook.Sheets[sheetName]
+  
+  if (!sheet) throw new Error('No sheet found in workbook')
+  
+  const range = XLSX.utils.decode_range(sheet['!ref'] || 'A1')
+  const rows: Array<Array<{text: string, url: string | null}>> = []
+  
+  for (let r = range.s.r; r <= range.e.r; r++) {
+    const row: Array<{text: string, url: string | null}> = []
+    for (let c = range.s.c; c <= range.e.c; c++) {
+      const cellRef = XLSX.utils.encode_cell({ r, c })
+      const cell = sheet[cellRef]
+      
+      if (!cell) {
+        row.push({ text: '', url: null })
+        continue
+      }
+      
+      const text = (cell.v !== undefined && cell.v !== null) ? String(cell.v) : ''
+      // Hyperlinks are stored in cell.l.Target
+      const url = cell.l?.Target || null
+      
+      row.push({ text: text.trim(), url })
+    }
+    rows.push(row)
+  }
+  
+  return { rows }
+}
+
+function parseSheetData(rows: Array<Array<{text: string, url: string | null}>>): ParsedItem[] {
   const items: ParsedItem[] = []
   let currentCategory = 'כללי'
 
   for (const row of rows) {
-    // Skip empty rows
-    if (!row[0] || row[0].trim().length === 0) continue
+    if (!row[0] || row[0].text.length === 0) continue
+    
+    // Skip metadata
+    if (row[0].text.includes('ניתן לסייע') || row[0].text.includes('נדרים פלוס')) continue
 
-    // Check if this is a header/category row
-    if (isHeaderRow(row)) {
-      currentCategory = row[0].trim()
+    // Check if any non-first cell has a URL
+    const hasUrls = row.slice(1).some(c => c.url)
+    
+    if (!hasUrls) {
+      // Header row - no links in any cell
+      if (row[0].text.length > 1 && !row[0].url) {
+        currentCategory = row[0].text
+      }
       continue
     }
 
-    const title = row[0].trim()
+    const title = row[0].text
 
-    // Process each cell (skip first which is title)
     for (let i = 1; i < row.length; i++) {
       const cell = row[i]
-      if (!cell || cell.trim().length === 0) continue
+      if (!cell.url) continue
+      if (isYouTubeUrl(cell.url)) continue
 
-      const url = extractUrl(cell)
-      if (!url) continue
-
-      // Skip YouTube links
-      if (isYouTubeUrl(url)) continue
-
-      // Determine type based on link text
-      if (isAudioLink(cell)) {
-        items.push({ title, category: currentCategory, url, type: 'podcast' })
-      } else if (isDownloadLink(cell)) {
-        items.push({ title, category: currentCategory, url, type: 'article' })
+      if (isAudioLink(cell.text)) {
+        items.push({ title, category: currentCategory, url: cell.url, type: 'podcast' })
       } else {
-        // Default: treat as article/download
-        items.push({ title, category: currentCategory, url, type: 'article' })
+        items.push({ title, category: currentCategory, url: cell.url, type: 'article' })
       }
     }
   }
@@ -141,118 +112,83 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { sheetUrl, sourceVideoId } = await req.json()
+    const { sheetUrl, sourceVideoId, debug } = await req.json()
     if (!sheetUrl) throw new Error('sheetUrl is required')
 
-    console.log('Parsing sheet:', sheetUrl, 'from video:', sourceVideoId)
+    console.log('Parsing sheet:', sheetUrl)
 
-    // Extract Google Sheets ID from URL
     const sheetIdMatch = sheetUrl.match(/\/d\/([a-zA-Z0-9_-]+)/)
-    if (!sheetIdMatch) throw new Error('Invalid Google Sheets URL: ' + sheetUrl)
+    if (!sheetIdMatch) throw new Error('Invalid Google Sheets URL')
     const sheetId = sheetIdMatch[1]
 
-    // Export as CSV (works for public sheets)
-    const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv`
-    console.log('Fetching CSV from:', csvUrl)
+    const { rows } = await fetchAndParseXlsx(sheetId)
+    console.log(`Parsed ${rows.length} rows from xlsx`)
 
-    const csvResponse = await fetch(csvUrl, { redirect: 'follow' })
-    if (!csvResponse.ok) {
-      throw new Error(`Failed to fetch sheet (${csvResponse.status}): ${csvResponse.statusText}`)
+    const items = parseSheetData(rows)
+    console.log(`Extracted ${items.length} items (articles: ${items.filter(i => i.type === 'article').length}, podcasts: ${items.filter(i => i.type === 'podcast').length})`)
+
+    if (debug) {
+      return new Response(
+        JSON.stringify({
+          success: true,
+          debug: true,
+          sampleRows: rows.slice(0, 10).map(r => r.map(c => ({ text: c.text.substring(0, 80), url: c.url }))),
+          items: items.slice(0, 30),
+          totalRows: rows.length,
+          totalItems: items.length,
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
-    const csvText = await csvResponse.text()
-    console.log('CSV length:', csvText.length)
-
-    // Parse CSV
-    const rows = parseCSV(csvText)
-    console.log('Parsed rows:', rows.length)
-
-    // Extract items
-    const items = parseSheetData(rows)
-    console.log('Extracted items:', items.length, '(articles:', items.filter(i => i.type === 'article').length, ', podcasts:', items.filter(i => i.type === 'podcast').length, ')')
-
-    // Insert into Supabase
+    // Insert into DB
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    const articles = items
-      .filter(i => i.type === 'article')
-      .map(i => ({
-        title: i.title,
-        content: i.title, // Use title as content placeholder
-        category: i.category,
-        download_url: i.url,
-        source_video_id: sourceVideoId || null,
-      }))
-
-    const podcasts = items
-      .filter(i => i.type === 'podcast')
-      .map(i => ({
-        title: i.title,
-        spotify_url: i.url, // Reuse spotify_url field for audio links
-        audio_url: i.url,
-        description: i.category,
-        source_video_id: sourceVideoId || null,
-      }))
-
     let articlesInserted = 0
     let podcastsInserted = 0
 
-    if (articles.length > 0) {
-      // Avoid duplicates: check by download_url
-      for (let i = 0; i < articles.length; i += 50) {
-        const batch = articles.slice(i, i + 50)
-        const { error } = await supabase
+    for (const item of items) {
+      if (item.type === 'article') {
+        const { data: existing } = await supabase
           .from('articles')
-          .upsert(batch, { onConflict: 'download_url', ignoreDuplicates: true })
-        if (error) {
-          // If upsert fails (no unique constraint), fall back to insert with duplicate check
-          console.log('Upsert not supported, using manual check')
-          for (const item of batch) {
-            const { data: existing } = await supabase
-              .from('articles')
-              .select('id')
-              .eq('download_url', item.download_url)
-              .limit(1)
-            if (!existing?.length) {
-              const { error: insertError } = await supabase.from('articles').insert(item)
-              if (!insertError) articlesInserted++
-              else console.error('Article insert error:', insertError)
-            }
-          }
-          continue
+          .select('id')
+          .eq('download_url', item.url)
+          .limit(1)
+        if (!existing?.length) {
+          const { error } = await supabase.from('articles').insert({
+            title: item.title,
+            content: item.title,
+            category: item.category,
+            download_url: item.url,
+            source_video_id: sourceVideoId || null,
+          })
+          if (!error) articlesInserted++
+          else console.error('Insert error:', error)
         }
-        articlesInserted += batch.length
-      }
-    }
-
-    if (podcasts.length > 0) {
-      for (let i = 0; i < podcasts.length; i += 50) {
-        const batch = podcasts.slice(i, i + 50)
-        for (const item of batch) {
-          const { data: existing } = await supabase
-            .from('podcasts')
-            .select('id')
-            .eq('audio_url', item.audio_url)
-            .limit(1)
-          if (!existing?.length) {
-            const { error: insertError } = await supabase.from('podcasts').insert(item)
-            if (!insertError) podcastsInserted++
-            else console.error('Podcast insert error:', insertError)
-          }
+      } else {
+        const { data: existing } = await supabase
+          .from('podcasts')
+          .select('id')
+          .eq('audio_url', item.url)
+          .limit(1)
+        if (!existing?.length) {
+          const { error } = await supabase.from('podcasts').insert({
+            title: item.title,
+            spotify_url: item.url,
+            audio_url: item.url,
+            description: item.category,
+            source_video_id: sourceVideoId || null,
+          })
+          if (!error) podcastsInserted++
+          else console.error('Insert error:', error)
         }
       }
     }
 
     return new Response(
-      JSON.stringify({
-        success: true,
-        parsed: items.length,
-        articlesInserted,
-        podcastsInserted,
-        sheetId,
-      }),
+      JSON.stringify({ success: true, parsed: items.length, articlesInserted, podcastsInserted, sheetId }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {

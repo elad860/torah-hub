@@ -5,8 +5,28 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Convert OneDrive share links to direct download
+function toDirectUrl(url: string): string {
+  // OneDrive: replace /view or end with ?download=1
+  if (url.includes('1drv.ms') || url.includes('onedrive.live.com') || url.includes('sharepoint.com')) {
+    // For 1drv.ms short links, append download=1
+    if (url.includes('1drv.ms')) {
+      return url + (url.includes('?') ? '&download=1' : '?download=1')
+    }
+  }
+  // Google Drive: convert to export/download
+  if (url.includes('drive.google.com/file/d/')) {
+    const fileId = url.match(/\/d\/([a-zA-Z0-9_-]+)/)?.[1]
+    if (fileId) return `https://drive.google.com/uc?export=download&id=${fileId}`
+  }
+  return url
+}
+
 async function extractTextFromUrl(url: string, firecrawlKey: string): Promise<string | null> {
   try {
+    // Try direct download first for document links
+    const directUrl = toDirectUrl(url)
+    
     const response = await fetch('https://api.firecrawl.dev/v1/scrape', {
       method: 'POST',
       headers: {
@@ -14,16 +34,16 @@ async function extractTextFromUrl(url: string, firecrawlKey: string): Promise<st
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        url,
+        url: directUrl,
         formats: ['markdown'],
         onlyMainContent: true,
-        waitFor: 3000,
+        waitFor: 5000,
       }),
     })
 
     if (!response.ok) {
       const errText = await response.text()
-      console.error(`Firecrawl error for ${url}: ${response.status} ${errText}`)
+      console.error(`Firecrawl error for ${directUrl}: ${response.status} ${errText}`)
       return null
     }
 
@@ -31,8 +51,18 @@ async function extractTextFromUrl(url: string, firecrawlKey: string): Promise<st
     const markdown = data.data?.markdown || data.markdown || null
     if (!markdown) return null
 
-    // Truncate to ~10k chars to keep DB manageable
-    return markdown.length > 10000 ? markdown.substring(0, 10000) : markdown
+    // Filter out OneDrive/Google Drive page chrome
+    const lines = markdown.split('\n').filter((line: string) => {
+      const l = line.trim().toLowerCase()
+      return !l.includes('onedrive') && !l.includes('sign in') && 
+             !l.includes('storage.live.com') && !l.includes('![') &&
+             l.length > 5
+    })
+    const cleaned = lines.join('\n').trim()
+    if (cleaned.length < 50) return null // Too little meaningful content
+
+    // Truncate to ~10k chars
+    return cleaned.length > 10000 ? cleaned.substring(0, 10000) : cleaned
   } catch (e) {
     console.error(`Error extracting ${url}:`, e)
     return null

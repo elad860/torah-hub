@@ -142,7 +142,7 @@ Deno.serve(async (req) => {
           const parseRes = await fetch(`${supabaseUrl}/functions/v1/parse-sheets`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseServiceKey}` },
-            body: JSON.stringify({ sheetUrl, sourceVideoId: info.videoId }),
+            body: JSON.stringify({ sheetUrl, sourceVideoId: info.videoId, publishedAt: info.publishedAt }),
           })
           const parseData = await parseRes.json()
           parseResults.push({ sheetId, videoTitle: info.videoTitle, ...parseData })

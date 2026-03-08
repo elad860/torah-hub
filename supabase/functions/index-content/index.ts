@@ -5,21 +5,27 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Convert OneDrive share links to direct download
+// Convert share links to direct download URLs
 function toDirectUrl(url: string): string {
-  // OneDrive: replace /view or end with ?download=1
-  if (url.includes('1drv.ms') || url.includes('onedrive.live.com') || url.includes('sharepoint.com')) {
-    // For 1drv.ms short links, append download=1
-    if (url.includes('1drv.ms')) {
-      return url + (url.includes('?') ? '&download=1' : '?download=1')
-    }
-  }
-  // Google Drive: convert to export/download
+  // Google Drive file: convert to direct download
   if (url.includes('drive.google.com/file/d/')) {
     const fileId = url.match(/\/d\/([a-zA-Z0-9_-]+)/)?.[1]
     if (fileId) return `https://drive.google.com/uc?export=download&id=${fileId}`
   }
   return url
+}
+
+// Check if URL points to an actual document (not a folder listing)
+function isIndexableUrl(url: string): boolean {
+  // Google Drive single file links - these are PDFs we can extract
+  if (url.includes('drive.google.com/file/d/')) return true
+  // OneDrive single file links (not folders)
+  if (url.includes('1drv.ms/b/')) return true // /b/ = single file
+  // Skip OneDrive folder links (/f/ = folder)
+  if (url.includes('1drv.ms/f/')) return false
+  // Skip generic OneDrive/SharePoint links that are usually folders
+  if (url.includes('1drv.ms') || url.includes('onedrive')) return false
+  return true
 }
 
 async function extractTextFromUrl(url: string, firecrawlKey: string): Promise<string | null> {

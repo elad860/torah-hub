@@ -77,11 +77,21 @@ const Articles = () => {
                   <p className="text-muted-foreground text-sm leading-relaxed line-clamp-3 mb-4" dir="rtl">
                     {article.content.substring(0, 150)}...
                   </p>
-                  <Link to={`/articles/${article.id}`}>
-                    <Button variant="outline" className="w-full border-gold/30 text-gold hover:bg-gold/10">
-                      קרא עוד
-                    </Button>
-                  </Link>
+                  <div className="flex gap-2">
+                    <Link to={`/articles/${article.id}`} className="flex-1">
+                      <Button variant="outline" className="w-full border-gold/30 text-gold hover:bg-gold/10">
+                        קרא עוד
+                      </Button>
+                    </Link>
+                    {article.download_url ? (
+                      <a href={article.download_url} target="_blank" rel="noopener noreferrer" className="flex-1">
+                        <Button variant="outline" className="w-full border-gold/30 text-gold hover:bg-gold/10 gap-2">
+                          <Download className="w-4 h-4" />
+                          הורד PDF
+                        </Button>
+                      </a>
+                    ) : null}
+                  </div>
                 </CardContent>
               </Card>
             ))}

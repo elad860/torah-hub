@@ -9,67 +9,42 @@ const YOUTUBE_API_BASE = 'https://www.googleapis.com/youtube/v3'
 const CHANNEL_HANDLE = '@yagdil'
 const TRIGGER_TEXT = 'קישור לדברי תורה'
 
-interface ScanResult {
-  videoId: string
-  videoTitle: string
-  sheetUrl: string
-}
-
 async function getChannelId(apiKey: string): Promise<string> {
-  const res = await fetch(
-    `${YOUTUBE_API_BASE}/channels?forHandle=${CHANNEL_HANDLE}&part=id&key=${apiKey}`
-  )
+  const res = await fetch(`${YOUTUBE_API_BASE}/channels?forHandle=${CHANNEL_HANDLE}&part=id&key=${apiKey}`)
   const data = await res.json()
   if (!data.items?.length) throw new Error('Channel not found')
   return data.items[0].id
 }
 
 async function getUploadsPlaylistId(apiKey: string, channelId: string): Promise<string> {
-  const res = await fetch(
-    `${YOUTUBE_API_BASE}/channels?id=${channelId}&part=contentDetails&key=${apiKey}`
-  )
+  const res = await fetch(`${YOUTUBE_API_BASE}/channels?id=${channelId}&part=contentDetails&key=${apiKey}`)
   const data = await res.json()
   return data.items[0].contentDetails.relatedPlaylists.uploads
 }
 
-async function getAllVideosWithDescriptions(apiKey: string, uploadsPlaylistId: string, limit?: number): Promise<Array<{videoId: string, title: string, description: string}>> {
-  const videos: Array<{videoId: string, title: string, description: string}> = []
-  let pageToken = ''
-
-  do {
-    const url = `${YOUTUBE_API_BASE}/playlistItems?playlistId=${uploadsPlaylistId}&part=snippet&maxResults=50&key=${apiKey}${pageToken ? `&pageToken=${pageToken}` : ''}`
-    const res = await fetch(url)
-    const data = await res.json()
-    if (data.items) {
-      for (const item of data.items) {
-        const vid = item.snippet?.resourceId?.videoId
-        const title = item.snippet?.title
-        const description = item.snippet?.description || ''
-        if (vid && title && title !== 'Private video' && title !== 'Deleted video') {
-          videos.push({ videoId: vid, title, description })
-        }
-      }
-    }
-    pageToken = data.nextPageToken || ''
-    if (limit && videos.length >= limit) {
-      return videos.slice(0, limit)
-    }
-  } while (pageToken)
-
-  return videos
+async function getVideosBatch(apiKey: string, uploadsPlaylistId: string, pageToken: string): Promise<{videos: Array<{videoId: string, title: string, description: string}>, nextPageToken: string}> {
+  const url = `${YOUTUBE_API_BASE}/playlistItems?playlistId=${uploadsPlaylistId}&part=snippet&maxResults=50&key=${apiKey}${pageToken ? `&pageToken=${pageToken}` : ''}`
+  const res = await fetch(url)
+  const data = await res.json()
+  
+  const videos = (data.items || [])
+    .filter((item: any) => {
+      const t = item.snippet?.title
+      return t && t !== 'Private video' && t !== 'Deleted video'
+    })
+    .map((item: any) => ({
+      videoId: item.snippet.resourceId.videoId,
+      title: item.snippet.title,
+      description: item.snippet.description || '',
+    }))
+  
+  return { videos, nextPageToken: data.nextPageToken || '' }
 }
 
-function findSheetUrlsInDescription(description: string): string[] {
-  const urls: string[] = []
-  // Check if description contains the trigger text
-  if (!description.includes(TRIGGER_TEXT)) return urls
-
-  // Extract Google Sheets URLs
+function findSheetUrls(description: string): string[] {
+  if (!description.includes(TRIGGER_TEXT)) return []
   const matches = description.match(/https:\/\/docs\.google\.com\/spreadsheets\/d\/[a-zA-Z0-9_-]+[^\s)"\n]*/g)
-  if (matches) {
-    urls.push(...matches)
-  }
-  return [...new Set(urls)]
+  return matches ? [...new Set(matches)] : []
 }
 
 Deno.serve(async (req) => {
@@ -81,81 +56,91 @@ Deno.serve(async (req) => {
     const apiKey = Deno.env.get('YOUTUBE_API_KEY')
     if (!apiKey) throw new Error('YOUTUBE_API_KEY not configured')
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-
     const body = await req.json().catch(() => ({}))
-    const mode = body.mode || 'full'
-    const recentCount = body.recentCount || 50
+    const mode = body.mode || 'scan-only' // scan-only = just find sheets, process = find + parse
+    const pageToken = body.pageToken || ''
+    const batchCount = body.batchCount || 5 // number of API pages (50 videos each)
 
-    // 1. Get channel info
     console.log('Getting channel ID...')
     const channelId = await getChannelId(apiKey)
     const uploadsPlaylistId = await getUploadsPlaylistId(apiKey, channelId)
 
-    // 2. Get videos with descriptions (no extra API calls needed!)
-    console.log('Fetching videos with descriptions...')
-    const limit = mode === 'recent' ? recentCount : undefined
-    const videos = await getAllVideosWithDescriptions(apiKey, uploadsPlaylistId, limit)
-    console.log(`Got ${videos.length} videos`)
+    // Scan in batches of pages
+    const results: Array<{videoId: string, videoTitle: string, sheetUrl: string}> = []
+    let currentPageToken = pageToken
+    let pagesProcessed = 0
+    let videosScanned = 0
 
-    // 3. Scan descriptions for sheet URLs
-    const results: ScanResult[] = []
-    let scanned = 0
-
-    for (const video of videos) {
-      scanned++
-      const sheetUrls = findSheetUrlsInDescription(video.description)
-      for (const sheetUrl of sheetUrls) {
-        results.push({
-          videoId: video.videoId,
-          videoTitle: video.title,
-          sheetUrl,
-        })
+    for (let i = 0; i < batchCount; i++) {
+      const { videos, nextPageToken } = await getVideosBatch(apiKey, uploadsPlaylistId, currentPageToken)
+      videosScanned += videos.length
+      
+      for (const video of videos) {
+        const sheetUrls = findSheetUrls(video.description)
+        for (const sheetUrl of sheetUrls) {
+          results.push({ videoId: video.videoId, videoTitle: video.title, sheetUrl })
+        }
       }
+      
+      pagesProcessed++
+      currentPageToken = nextPageToken
+      if (!currentPageToken) break
     }
 
-    console.log(`Scan complete. Found ${results.length} sheets across ${scanned} videos.`)
+    console.log(`Scanned ${videosScanned} videos across ${pagesProcessed} pages. Found ${results.length} sheet references.`)
 
-    // 4. Parse unique sheets
-    const uniqueSheets = new Map<string, { videoId: string, videoTitle: string }>()
+    // Deduplicate sheets
+    const uniqueSheets = new Map<string, {videoId: string, videoTitle: string}>()
     for (const r of results) {
-      if (!uniqueSheets.has(r.sheetUrl)) {
-        uniqueSheets.set(r.sheetUrl, { videoId: r.videoId, videoTitle: r.videoTitle })
+      const id = r.sheetUrl.match(/\/d\/([a-zA-Z0-9_-]+)/)?.[1]
+      if (id && !uniqueSheets.has(id)) {
+        uniqueSheets.set(id, { videoId: r.videoId, videoTitle: r.videoTitle })
       }
     }
 
-    const parseResults = []
-    for (const [sheetUrl, info] of uniqueSheets) {
-      console.log(`Parsing sheet from video "${info.videoTitle}": ${sheetUrl}`)
-      try {
-        const parseRes = await fetch(`${supabaseUrl}/functions/v1/parse-sheets`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${supabaseServiceKey}`,
-          },
-          body: JSON.stringify({ sheetUrl, sourceVideoId: info.videoId }),
-        })
-        const parseData = await parseRes.json()
-        parseResults.push({ sheetUrl, videoTitle: info.videoTitle, ...parseData })
-      } catch (e) {
-        console.error('Failed to parse sheet:', sheetUrl, e)
-        parseResults.push({ sheetUrl, videoTitle: info.videoTitle, success: false, error: String(e) })
+    // If mode is process, call parse-sheets for each
+    let parseResults: any[] = []
+    if (mode === 'process' && uniqueSheets.size > 0) {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+
+      for (const [sheetId, info] of uniqueSheets) {
+        const sheetUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/edit`
+        console.log(`Parsing sheet ${sheetId} from video "${info.videoTitle}"`)
+        try {
+          const parseRes = await fetch(`${supabaseUrl}/functions/v1/parse-sheets`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseServiceKey}` },
+            body: JSON.stringify({ sheetUrl, sourceVideoId: info.videoId }),
+          })
+          const parseData = await parseRes.json()
+          parseResults.push({ sheetId, videoTitle: info.videoTitle, ...parseData })
+        } catch (e) {
+          parseResults.push({ sheetId, videoTitle: info.videoTitle, success: false, error: String(e) })
+        }
       }
     }
 
     return new Response(
       JSON.stringify({
         success: true,
-        videosScanned: scanned,
+        videosScanned,
+        pagesProcessed,
         sheetsFound: uniqueSheets.size,
-        parseResults,
+        sheets: Array.from(uniqueSheets.entries()).map(([id, info]) => ({
+          sheetId: id,
+          sheetUrl: `https://docs.google.com/spreadsheets/d/${id}/edit`,
+          videoId: info.videoId,
+          videoTitle: info.videoTitle,
+        })),
+        nextPageToken: currentPageToken || null,
+        hasMore: !!currentPageToken,
+        parseResults: parseResults.length > 0 ? parseResults : undefined,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
-    console.error('Error scanning descriptions:', error)
+    console.error('Error scanning:', error)
     return new Response(
       JSON.stringify({ success: false, error: error instanceof Error ? error.message : 'Unknown error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

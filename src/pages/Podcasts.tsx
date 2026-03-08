@@ -1,122 +1,93 @@
 import { Layout } from "@/components/Layout";
-import { Headphones, ExternalLink, Play } from "lucide-react";
+import { Mic, Play, Volume2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SpotifyEmbed } from "@/components/SpotifyEmbed";
 import { usePodcasts } from "@/hooks/usePodcasts";
-import rabbiBanner from "@/assets/rabbi-banner.png";
+import { Badge } from "@/components/ui/badge";
 
 const Podcasts = () => {
   const { data: podcasts, isLoading, error } = usePodcasts();
 
   return (
     <Layout>
-      {/* Hero Section */}
-      <section className="py-16 md:py-24">
-        <div className="container mx-auto px-4">
-          <div className="max-w-3xl mx-auto text-center">
-            <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-gold flex items-center justify-center shadow-gold animate-fade-up overflow-hidden">
-              <img src={rabbiBanner} alt="הרב אורן נזרית" className="w-full h-full object-cover object-top" />
-            </div>
-            <div className="flex items-center justify-center gap-3 mb-4 animate-fade-up">
-              <Headphones className="w-8 h-8 text-gold" />
-              <h1 className="text-3xl md:text-5xl font-bold text-white">
-                הפודקאסט של <span className="text-gold">הרב אורן נזרית</span>
-              </h1>
-            </div>
-            <p className="text-lg md:text-xl text-white/80 mb-8 animate-fade-up" style={{ animationDelay: "0.1s" }}>
-              שיעורי הרב זמינים להאזנה גם בספוטיפיי
-            </p>
-            
-            {/* Spotify Channel Button - Placeholder */}
-            <div className="animate-fade-up" style={{ animationDelay: "0.2s" }}>
-              <Button variant="gold" size="xl" className="gap-2" disabled>
-                <ExternalLink className="w-5 h-5" />
-                לערוץ הספוטיפיי המלא (בקרוב)
-              </Button>
-            </div>
+      <div className="container mx-auto px-4 py-16">
+        {/* Page Header */}
+        <div className="text-center max-w-2xl mx-auto mb-12">
+          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-gold flex items-center justify-center shadow-gold">
+            <Mic className="w-10 h-10 text-primary" />
           </div>
+          <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+            הקלטות
+          </h1>
+          <p className="text-muted-foreground text-lg">
+            הקלטות שמע של שיעורי הרב להאזנה
+          </p>
         </div>
-      </section>
 
-      {/* Podcasts Grid */}
-      <section className="py-12 md:py-16 bg-black/30 backdrop-blur-sm">
-        <div className="container mx-auto px-4">
-          <div className="max-w-5xl mx-auto">
-            <h2 className="text-2xl md:text-3xl font-bold text-white mb-8 text-center">
-              פרקים אחרונים
-            </h2>
-
-            {isLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="bg-white/10 rounded-xl h-80 animate-pulse" />
-                ))}
-              </div>
-            ) : error ? (
-              <div className="text-center py-12">
-                <p className="text-white/70">אירעה שגיאה בטעינת הפודקאסטים</p>
-              </div>
-            ) : podcasts && podcasts.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {podcasts.map((podcast) => (
-                  <div key={podcast.id} className="space-y-3">
-                    <SpotifyEmbed 
-                      spotifyUrl={podcast.spotify_url} 
-                      title={podcast.title} 
-                    />
-                    <div className="px-2">
-                      <h3 className="text-white font-semibold">{podcast.title}</h3>
-                      {podcast.description && (
-                        <p className="text-white/60 text-sm mt-1">{podcast.description}</p>
-                      )}
-                      {podcast.audio_url && (
-                        <a href={podcast.audio_url} target="_blank" rel="noopener noreferrer">
-                          <Button variant="outline" size="sm" className="mt-2 gap-2 border-gold/30 text-gold hover:bg-gold/10">
-                            <Play className="w-4 h-4" />
-                            האזן לשמע
-                          </Button>
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12 bg-white/5 rounded-xl border border-gold/20">
-                <Headphones className="w-16 h-16 mx-auto mb-4 text-gold/50" />
-                <p className="text-white/70 text-lg">הפודקאסטים יעלו בקרוב...</p>
-                <p className="text-white/50 mt-2">עקבו אחרינו בספוטיפיי לעדכונים</p>
-              </div>
-            )}
+        {/* Recordings Grid */}
+        {isLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+              <div key={i} className="rounded-lg h-28 animate-pulse bg-white/10" />
+            ))}
           </div>
-        </div>
-      </section>
-
-      {/* Info Section */}
-      <section className="py-12 md:py-16">
-        <div className="container mx-auto px-4">
-          <div className="max-w-2xl mx-auto text-center">
-            <h3 className="text-xl font-bold text-white mb-4">איך להאזין?</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-white/80">
-              <div className="bg-white/10 rounded-xl p-6 border border-gold/20">
-                <div className="text-3xl mb-3">📱</div>
-                <h4 className="font-semibold mb-2">אפליקציית ספוטיפיי</h4>
-                <p className="text-sm text-white/60">הורידו את האפליקציה והאזינו בכל מקום</p>
-              </div>
-              <div className="bg-white/10 rounded-xl p-6 border border-gold/20">
-                <div className="text-3xl mb-3">🎧</div>
-                <h4 className="font-semibold mb-2">האזנה אופליין</h4>
-                <p className="text-sm text-white/60">הורידו פרקים להאזנה ללא אינטרנט</p>
-              </div>
-              <div className="bg-white/10 rounded-xl p-6 border border-gold/20">
-                <div className="text-3xl mb-3">🔔</div>
-                <h4 className="font-semibold mb-2">התראות</h4>
-                <p className="text-sm text-white/60">עקבו וקבלו עדכון על פרקים חדשים</p>
-              </div>
-            </div>
+        ) : error ? (
+          <div className="text-center py-12">
+            <p className="text-white/70">אירעה שגיאה בטעינת ההקלטות</p>
           </div>
-        </div>
-      </section>
+        ) : podcasts && podcasts.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {podcasts.map((podcast) => (
+              <div
+                key={podcast.id}
+                className="group relative rounded-lg border border-gold/15 overflow-hidden transition-all duration-300 hover:border-gold/40 hover:shadow-md hover:shadow-gold/10"
+                style={{
+                  background: 'linear-gradient(145deg, hsl(250 15% 14% / 0.9), hsl(240 10% 11% / 0.95))',
+                }}
+              >
+                {/* Sound wave pattern overlay */}
+                <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
+                  style={{
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='20' viewBox='0 0 100 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M21.184 20c.357-.13.72-.264 1.088-.402l1.768-.661C33.64 15.347 39.647 14 50 14c10.271 0 15.362 1.222 24.629 4.928.955.383 1.869.74 2.75 1.072h6.225c-2.51-.73-5.139-1.691-8.233-2.928C65.888 13.278 60.562 12 50 12c-10.626 0-16.855 1.397-26.66 5.063l-1.767.662c-2.475.923-4.66 1.674-6.724 2.275h6.335zm0-20C13.258 2.892 8.077 4 0 4V2c5.744 0 9.951-.574 14.85-2h6.334zM77.38 0C85.239 2.966 90.502 4 100 4V2c-6.842 0-11.386-.542-16.396-2h-6.225zM0 14c8.44 0 13.718-1.21 22.272-4.402l1.768-.661C33.64 5.347 39.647 4 50 4c10.271 0 15.362 1.222 24.629 4.928C84.112 12.722 89.438 14 100 14v-2c-10.271 0-15.362-1.222-24.629-4.928C65.888 3.278 60.562 2 50 2 39.374 2 33.145 3.397 23.34 7.063l-1.767.662C13.223 10.84 8.163 12 0 12v2z' fill='%239C92AC' fill-opacity='1' fill-rule='evenodd'/%3E%3C/svg%3E")`,
+                  }}
+                />
+
+                <div className="relative p-4 flex flex-col">
+                  {/* Title */}
+                  <h3 className="text-white font-semibold text-sm leading-tight line-clamp-2 mb-1">
+                    {podcast.title}
+                  </h3>
+
+                  {podcast.description && (
+                    <p className="text-white/40 text-xs line-clamp-1 mb-3">
+                      {podcast.description}
+                    </p>
+                  )}
+
+                  {/* Play button */}
+                  {podcast.audio_url ? (
+                    <a href={podcast.audio_url} target="_blank" rel="noopener noreferrer">
+                      <Button size="sm" className="w-full gap-2 bg-gold/20 hover:bg-gold/30 text-gold border border-gold/30 text-xs font-semibold h-8">
+                        <Play className="w-3 h-3" />
+                        האזן
+                      </Button>
+                    </a>
+                  ) : (
+                    <Button size="sm" className="w-full gap-2 opacity-30 cursor-not-allowed bg-white/5 text-white/40 border border-white/10 text-xs h-8" disabled>
+                      <Volume2 className="w-3 h-3" />
+                      לא זמין
+                    </Button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12 bg-white/5 rounded-xl border border-gold/20 max-w-md mx-auto">
+            <Mic className="w-12 h-12 mx-auto mb-4 text-gold/50" />
+            <p className="text-white/70 text-lg">ההקלטות יעלו בקרוב...</p>
+          </div>
+        )}
+      </div>
     </Layout>
   );
 };

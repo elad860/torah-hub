@@ -1,8 +1,6 @@
 import { Layout } from "@/components/Layout";
-import { FileText, Download, ExternalLink } from "lucide-react";
+import { FileText, ExternalLink, BookOpen } from "lucide-react";
 import { useArticles } from "@/hooks/useArticles";
-import { Link } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -16,13 +14,13 @@ const Articles = () => {
         {/* Page Header */}
         <div className="text-center max-w-2xl mx-auto mb-12">
           <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-gold flex items-center justify-center shadow-gold">
-            <FileText className="w-10 h-10 text-primary" />
+            <BookOpen className="w-10 h-10 text-primary" />
           </div>
           <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
             מאמרים
           </h1>
           <p className="text-muted-foreground text-lg">
-            מאמרי הגות ופרשת שבוע לקריאה
+            מאמרי הגות ופרשת שבוע לקריאה והורדה
           </p>
         </div>
 
@@ -30,70 +28,63 @@ const Articles = () => {
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2, 3].map((i) => (
-              <Card key={i} className="bg-card/80 backdrop-blur-sm border-gold/20">
-                <CardHeader>
-                  <Skeleton className="h-6 w-3/4" />
-                  <Skeleton className="h-4 w-1/4 mt-2" />
-                </CardHeader>
-                <CardContent>
-                  <Skeleton className="h-4 w-full mb-2" />
-                  <Skeleton className="h-4 w-full mb-2" />
-                  <Skeleton className="h-4 w-2/3" />
-                </CardContent>
-              </Card>
+              <div key={i} className="rounded-xl h-48 animate-pulse bg-white/10" />
             ))}
           </div>
         ) : articles && articles.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {articles.map((article) => (
-              <Card
+              <div
                 key={article.id}
-                className="bg-card/80 backdrop-blur-sm border-gold/20 hover:border-gold/40 transition-all duration-300 flex flex-col"
+                className="group relative rounded-xl border border-gold/20 overflow-hidden transition-all duration-300 hover:border-gold/50 hover:shadow-lg hover:shadow-gold/10"
+                style={{
+                  background: 'linear-gradient(135deg, hsl(35 30% 15% / 0.9), hsl(30 20% 12% / 0.95))',
+                }}
               >
-                {article.image_url && (
-                  <div className="w-full h-48 overflow-hidden rounded-t-lg">
-                    <img
-                      src={article.image_url}
-                      alt={article.title}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                    />
-                  </div>
-                )}
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <Badge variant="outline" className="border-gold/40 text-gold text-xs">
+                {/* Parchment texture overlay */}
+                <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
+                  style={{
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23d4a574' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+                  }}
+                />
+                
+                <div className="relative p-5 flex flex-col h-full min-h-[200px]">
+                  {/* Top: category & date */}
+                  <div className="flex items-center justify-between mb-3">
+                    <Badge variant="outline" className="border-gold/40 text-gold text-xs bg-gold/5">
                       {article.category}
                     </Badge>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-xs text-white/40">
                       {new Date(article.created_at).toLocaleDateString("he-IL")}
                     </span>
                   </div>
-                  <CardTitle className="text-lg leading-tight text-foreground">
+
+                  {/* Title */}
+                  <h3 className="text-white font-bold text-lg leading-tight mb-2 line-clamp-2">
                     {article.title}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="flex-1 flex flex-col justify-between">
-                  <p className="text-muted-foreground text-sm leading-relaxed line-clamp-3 mb-4" dir="rtl">
-                    {article.content.substring(0, 150)}...
-                  </p>
-                  <div className="flex gap-2">
-                    <Link to={`/articles/${article.id}`} className="flex-1">
-                      <Button variant="outline" className="w-full border-gold/30 text-gold hover:bg-gold/10">
-                        קרא עוד
+                  </h3>
+
+                  {/* Spacer */}
+                  <div className="flex-1" />
+
+                  {/* Action button */}
+                  {article.download_url ? (
+                    <a href={article.download_url} target="_blank" rel="noopener noreferrer" className="block mt-4">
+                      <Button className="w-full gap-2 bg-gold/20 hover:bg-gold/30 text-gold border border-gold/30 font-semibold">
+                        <ExternalLink className="w-4 h-4" />
+                        לצפייה במאמר
                       </Button>
-                    </Link>
-                    {article.download_url ? (
-                      <a href={article.download_url} target="_blank" rel="noopener noreferrer" className="flex-1">
-                        <Button variant="outline" className="w-full border-gold/30 text-gold hover:bg-gold/10 gap-2">
-                          <Download className="w-4 h-4" />
-                          הורד PDF
-                        </Button>
-                      </a>
-                    ) : null}
-                  </div>
-                </CardContent>
-              </Card>
+                    </a>
+                  ) : (
+                    <div className="mt-4">
+                      <Button className="w-full gap-2 opacity-40 cursor-not-allowed bg-white/5 text-white/40 border border-white/10" disabled>
+                        <FileText className="w-4 h-4" />
+                        קישור לא זמין
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
             ))}
           </div>
         ) : (

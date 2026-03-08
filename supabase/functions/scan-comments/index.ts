@@ -129,10 +129,13 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Parse sheets if mode=process
+    // Parse sheets if mode=process - only process first sheet to avoid timeout
     let parseResults: any[] = []
     if (mode === 'process' && uniqueSheets.size > 0) {
+      let processed = 0
+      const maxSheets = body.maxSheets || 1 // default to 1 sheet per run to avoid timeout
       for (const [sheetId, info] of uniqueSheets) {
+        if (processed >= maxSheets) break
         const sheetUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/edit`
         console.log(`Parsing sheet ${sheetId} from video "${info.videoTitle}"`)
         try {
@@ -143,8 +146,10 @@ Deno.serve(async (req) => {
           })
           const parseData = await parseRes.json()
           parseResults.push({ sheetId, videoTitle: info.videoTitle, ...parseData })
+          processed++
         } catch (e) {
           parseResults.push({ sheetId, videoTitle: info.videoTitle, success: false, error: String(e) })
+          processed++
         }
       }
     }

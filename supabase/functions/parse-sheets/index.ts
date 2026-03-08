@@ -10,6 +10,20 @@ function isYouTubeUrl(url: string): boolean {
   return url.includes('youtube.com') || url.includes('youtu.be')
 }
 
+function isAudioUrl(url: string): boolean {
+  // Audio hosting sites
+  return url.includes('audio.com') || url.includes('soundcloud.com') || 
+         url.includes('anchor.fm') || url.includes('podcasters.spotify.com') ||
+         url.includes('buzz') || url.includes('podbean')
+}
+
+function isDocumentUrl(url: string): boolean {
+  // Google Drive, PDF links, document hosting
+  return url.includes('drive.google.com') || url.includes('docs.google.com/document') ||
+         url.toLowerCase().endsWith('.pdf') || url.includes('dropbox.com') ||
+         url.includes('onedrive') || url.includes('sharepoint')
+}
+
 function isAudioLink(text: string): boolean {
   return text.includes('לשמיעת') || text.includes('שמיעה') || text.includes('לשמיעה')
 }
@@ -93,13 +107,16 @@ function parseSheetData(rows: Array<Array<{text: string, url: string | null}>>):
     for (let i = 1; i < row.length; i++) {
       const cell = row[i]
       if (!cell.url) continue
+      // Skip YouTube links entirely - already synced from channel
       if (isYouTubeUrl(cell.url)) continue
 
-      if (isAudioLink(cell.text)) {
+      // Classify by URL pattern first, then by Hebrew text hint
+      if (isAudioUrl(cell.url) || isAudioLink(cell.text)) {
         items.push({ title, category: currentCategory, url: cell.url, type: 'podcast' })
-      } else {
+      } else if (isDocumentUrl(cell.url) || cell.url.toLowerCase().includes('.pdf')) {
         items.push({ title, category: currentCategory, url: cell.url, type: 'article' })
       }
+      // If URL doesn't match audio or document patterns, skip it
     }
   }
 

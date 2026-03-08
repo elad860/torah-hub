@@ -105,44 +105,23 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Process podcasts
+    // Process podcasts - use created_at directly for speed
     if (table === 'podcasts' || table === 'both') {
-      let offset = 0
-      while (true) {
-        const { data: podcasts } = await supabase
-          .from('podcasts')
-          .select('id, created_at, source_video_id')
-          .is('hebrew_year', null)
-          .range(offset, offset + batchSize - 1)
+      const { data: podcasts } = await supabase
+        .from('podcasts')
+        .select('id, created_at')
+        .is('hebrew_year', null)
+        .limit(batchSize)
 
-        if (!podcasts || podcasts.length === 0) break
-
+      if (podcasts) {
         for (const podcast of podcasts) {
-          let dateToUse = new Date(podcast.created_at)
-
-          if (podcast.source_video_id) {
-            const { data: lesson } = await supabase
-              .from('lessons')
-              .select('published_at')
-              .eq('youtube_url', `https://www.youtube.com/watch?v=${podcast.source_video_id}`)
-              .maybeSingle()
-
-            if (lesson?.published_at) {
-              dateToUse = new Date(lesson.published_at)
-            }
-          }
-
-          const hebrewYear = getHebrewYear(dateToUse)
+          const hebrewYear = getHebrewYear(new Date(podcast.created_at))
           const { error } = await supabase
             .from('podcasts')
             .update({ hebrew_year: hebrewYear })
             .eq('id', podcast.id)
-
           if (!error) podcastsUpdated++
         }
-
-        if (podcasts.length < batchSize) break
-        offset += batchSize
       }
     }
 

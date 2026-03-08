@@ -10,6 +10,20 @@ function isYouTubeUrl(url: string): boolean {
   return url.includes('youtube.com') || url.includes('youtu.be')
 }
 
+function isAudioUrl(url: string): boolean {
+  // Audio hosting sites
+  return url.includes('audio.com') || url.includes('soundcloud.com') || 
+         url.includes('anchor.fm') || url.includes('podcasters.spotify.com') ||
+         url.includes('buzz') || url.includes('podbean')
+}
+
+function isDocumentUrl(url: string): boolean {
+  // Google Drive, PDF links, document hosting
+  return url.includes('drive.google.com') || url.includes('docs.google.com/document') ||
+         url.toLowerCase().endsWith('.pdf') || url.includes('dropbox.com') ||
+         url.includes('onedrive') || url.includes('sharepoint')
+}
+
 function isAudioLink(text: string): boolean {
   return text.includes('לשמיעת') || text.includes('שמיעה') || text.includes('לשמיעה')
 }

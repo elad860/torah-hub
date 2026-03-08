@@ -1,5 +1,5 @@
 import { Layout } from "@/components/Layout";
-import { Headphones, ExternalLink } from "lucide-react";
+import { Headphones, ExternalLink, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SpotifyEmbed } from "@/components/SpotifyEmbed";
 import { usePodcasts } from "@/hooks/usePodcasts";
@@ -68,6 +68,14 @@ const Podcasts = () => {
                       <h3 className="text-white font-semibold">{podcast.title}</h3>
                       {podcast.description && (
                         <p className="text-white/60 text-sm mt-1">{podcast.description}</p>
+                      )}
+                      {podcast.audio_url && (
+                        <a href={podcast.audio_url} target="_blank" rel="noopener noreferrer">
+                          <Button variant="outline" size="sm" className="mt-2 gap-2 border-gold/30 text-gold hover:bg-gold/10">
+                            <Play className="w-4 h-4" />
+                            האזן לשמע
+                          </Button>
+                        </a>
                       )}
                     </div>
                   </div>

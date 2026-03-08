@@ -7,6 +7,7 @@ export interface Article {
   content: string;
   category: string;
   image_url: string | null;
+  download_url: string | null;
   created_at: string;
 }
 

@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           category: string
           content: string
+          content_text: string | null
           created_at: string
           download_url: string | null
           id: string
@@ -28,6 +29,7 @@ export type Database = {
         Insert: {
           category?: string
           content: string
+          content_text?: string | null
           created_at?: string
           download_url?: string | null
           id?: string
@@ -38,6 +40,7 @@ export type Database = {
         Update: {
           category?: string
           content?: string
+          content_text?: string | null
           created_at?: string
           download_url?: string | null
           id?: string
@@ -116,6 +119,7 @@ export type Database = {
       podcasts: {
         Row: {
           audio_url: string | null
+          content_text: string | null
           created_at: string
           description: string | null
           id: string
@@ -125,6 +129,7 @@ export type Database = {
         }
         Insert: {
           audio_url?: string | null
+          content_text?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -134,6 +139,7 @@ export type Database = {
         }
         Update: {
           audio_url?: string | null
+          content_text?: string | null
           created_at?: string
           description?: string | null
           id?: string

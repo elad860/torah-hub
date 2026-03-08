@@ -150,9 +150,9 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { sheetUrl, sourceVideoId, debug } = await req.json()
+    const { sheetUrl, sourceVideoId, debug, publishedAt } = await req.json()
     if (!sheetUrl) throw new Error('sheetUrl is required')
-
+    const hebrewYear = calcHebrewYear(publishedAt || new Date().toISOString())
     console.log('Parsing sheet:', sheetUrl)
 
     const sheetIdMatch = sheetUrl.match(/\/d\/([a-zA-Z0-9_-]+)/)

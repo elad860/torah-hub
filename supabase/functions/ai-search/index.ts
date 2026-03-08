@@ -59,7 +59,8 @@ Deno.serve(async (req) => {
     if (articlesRes.data?.length) {
       context.push('\nמאמרים/גליונות שנמצאו:')
       for (const a of articlesRes.data) {
-        context.push(`- "${a.title}" (קטגוריה: ${a.category})${a.download_url ? ' - קישור: ' + a.download_url : ''}`)
+        const snippet = a.content_text ? ` | תוכן: ${a.content_text.substring(0, 300)}...` : ''
+        context.push(`- "${a.title}" (קטגוריה: ${a.category})${a.download_url ? ' - קישור: ' + a.download_url : ''}${snippet}`)
       }
     }
 

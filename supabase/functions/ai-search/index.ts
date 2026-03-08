@@ -67,7 +67,8 @@ Deno.serve(async (req) => {
     if (podcastsRes.data?.length) {
       context.push('\nהקלטות/פודקאסטים שנמצאו:')
       for (const p of podcastsRes.data) {
-        context.push(`- "${p.title}"${p.description ? ' (' + p.description + ')' : ''} - ${p.audio_url || p.spotify_url}`)
+        const snippet = p.content_text ? ` | תוכן: ${p.content_text.substring(0, 300)}...` : ''
+        context.push(`- "${p.title}"${p.description ? ' (' + p.description + ')' : ''} - ${p.audio_url || p.spotify_url}${snippet}`)
       }
     }
 

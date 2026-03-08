@@ -107,13 +107,16 @@ function parseSheetData(rows: Array<Array<{text: string, url: string | null}>>):
     for (let i = 1; i < row.length; i++) {
       const cell = row[i]
       if (!cell.url) continue
+      // Skip YouTube links entirely - already synced from channel
       if (isYouTubeUrl(cell.url)) continue
 
-      if (isAudioLink(cell.text)) {
+      // Classify by URL pattern first, then by Hebrew text hint
+      if (isAudioUrl(cell.url) || isAudioLink(cell.text)) {
         items.push({ title, category: currentCategory, url: cell.url, type: 'podcast' })
-      } else {
+      } else if (isDocumentUrl(cell.url) || cell.url.toLowerCase().includes('.pdf')) {
         items.push({ title, category: currentCategory, url: cell.url, type: 'article' })
       }
+      // If URL doesn't match audio or document patterns, skip it
     }
   }
 

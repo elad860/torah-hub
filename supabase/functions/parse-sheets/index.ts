@@ -201,6 +201,8 @@ Deno.serve(async (req) => {
             category: item.category,
             download_url: item.url,
             source_video_id: sourceVideoId || null,
+            hebrew_year: hebrewYear,
+            content_text: `${item.title}. קטגוריה: ${item.category}.`,
           })
           if (!error) articlesInserted++
           else console.error('Insert error:', error)

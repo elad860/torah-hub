@@ -33,7 +33,8 @@ async function extractTextFromUrl(url: string, firecrawlKey: string): Promise<st
         url: directUrl,
         formats: ['markdown'],
         onlyMainContent: true,
-        waitFor: 5000,
+        waitFor: 10000,
+        timeout: 30000,
       }),
     })
 

@@ -92,12 +92,13 @@ Deno.serve(async (req) => {
     let articleErrors = 0
     let podcastErrors = 0
 
-    // Index articles - get those without content_text, with a download_url
+    // Index articles - get Google Drive links without content_text
     if (type === 'both' || type === 'articles') {
       const { data: articles } = await supabase
         .from('articles')
         .select('id, title, download_url')
         .not('download_url', 'is', null)
+        .like('download_url', '%drive.google.com/file/d/%')
         .is('content_text', null)
         .order('created_at', { ascending: false })
         .limit(limit)

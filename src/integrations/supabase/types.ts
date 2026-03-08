@@ -21,6 +21,7 @@ export type Database = {
           content_text: string | null
           created_at: string
           download_url: string | null
+          hebrew_year: string | null
           id: string
           image_url: string | null
           source_video_id: string | null
@@ -32,6 +33,7 @@ export type Database = {
           content_text?: string | null
           created_at?: string
           download_url?: string | null
+          hebrew_year?: string | null
           id?: string
           image_url?: string | null
           source_video_id?: string | null
@@ -43,6 +45,7 @@ export type Database = {
           content_text?: string | null
           created_at?: string
           download_url?: string | null
+          hebrew_year?: string | null
           id?: string
           image_url?: string | null
           source_video_id?: string | null
@@ -122,6 +125,7 @@ export type Database = {
           content_text: string | null
           created_at: string
           description: string | null
+          hebrew_year: string | null
           id: string
           source_video_id: string | null
           spotify_url: string
@@ -132,6 +136,7 @@ export type Database = {
           content_text?: string | null
           created_at?: string
           description?: string | null
+          hebrew_year?: string | null
           id?: string
           source_video_id?: string | null
           spotify_url: string
@@ -142,6 +147,7 @@ export type Database = {
           content_text?: string | null
           created_at?: string
           description?: string | null
+          hebrew_year?: string | null
           id?: string
           source_video_id?: string | null
           spotify_url?: string

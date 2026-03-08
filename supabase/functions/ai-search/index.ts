@@ -35,14 +35,14 @@ Deno.serve(async (req) => {
         .limit(20),
       supabase
         .from('articles')
-        .select('id, title, category, download_url, created_at')
-        .or(`title.ilike.${searchTerm},content.ilike.${searchTerm}`)
+        .select('id, title, category, download_url, content_text, created_at')
+        .or(`title.ilike.${searchTerm},content.ilike.${searchTerm},content_text.ilike.${searchTerm}`)
         .order('created_at', { ascending: false })
         .limit(10),
       supabase
         .from('podcasts')
-        .select('id, title, description, spotify_url, audio_url, created_at')
-        .or(`title.ilike.${searchTerm},description.ilike.${searchTerm}`)
+        .select('id, title, description, spotify_url, audio_url, content_text, created_at')
+        .or(`title.ilike.${searchTerm},description.ilike.${searchTerm},content_text.ilike.${searchTerm}`)
         .order('created_at', { ascending: false })
         .limit(10),
     ])

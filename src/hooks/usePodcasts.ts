@@ -15,10 +15,24 @@ export const usePodcasts = () => {
   return useQuery({
     queryKey: ["podcasts"],
     queryFn: async (): Promise<Podcast[]> => {
-      const { data, error } = await supabase
-        .from("podcasts")
-        .select("*")
-        .order("created_at", { ascending: false });
+      // Fetch all podcasts (default limit is 1000, we need more)
+      let all: Podcast[] = [];
+      let from = 0;
+      const pageSize = 1000;
+      while (true) {
+        const { data, error: err } = await supabase
+          .from("podcasts")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .range(from, from + pageSize - 1);
+        if (err) throw err;
+        if (!data || data.length === 0) break;
+        all = all.concat(data as Podcast[]);
+        if (data.length < pageSize) break;
+        from += pageSize;
+      }
+
+      return all;
 
       if (error) {
         console.error("Error fetching podcasts:", error);

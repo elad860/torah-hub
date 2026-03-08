@@ -1,5 +1,5 @@
 import { Layout } from "@/components/Layout";
-import { Headphones, ExternalLink } from "lucide-react";
+import { Headphones, ExternalLink, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SpotifyEmbed } from "@/components/SpotifyEmbed";
 import { usePodcasts } from "@/hooks/usePodcasts";

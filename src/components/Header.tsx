@@ -56,8 +56,9 @@ export function Header() {
             ))}
           </nav>
 
-          {/* Cart & Donate - Desktop */}
+          {/* AI Search, Cart & Donate - Desktop */}
           <div className="hidden md:flex items-center gap-2">
+            <AISearchBox />
             <CartDrawer />
             <a
               href={DONATION_URL}

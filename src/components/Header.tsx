@@ -57,7 +57,12 @@ export function Header() {
 
           {/* AI Search, Cart & Donate - Desktop */}
           <div className="hidden md:flex items-center gap-2">
-            <AISearchBox />
+            <Link to="/ai-assistant">
+              <Button variant="outline" size="sm" className="gap-2 border-gold/30 text-gold hover:bg-gold/10 hover:text-gold">
+                <Sparkles className="w-4 h-4" />
+                <span className="hidden sm:inline">עוזר AI</span>
+              </Button>
+            </Link>
             <CartDrawer />
             <a
               href={DONATION_URL}

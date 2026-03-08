@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import * as XLSX from 'https://esm.sh/xlsx@0.18.5'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,11 +14,6 @@ function isAudioLink(text: string): boolean {
   return text.includes('לשמיעת') || text.includes('שמיעה') || text.includes('לשמיעה')
 }
 
-interface CellData {
-  text: string
-  url: string | null
-}
-
 interface ParsedItem {
   title: string
   category: string
@@ -25,60 +21,53 @@ interface ParsedItem {
   type: 'article' | 'podcast'
 }
 
-// Fetch sheet data with hyperlinks using Google Sheets API
-async function fetchSheetWithHyperlinks(sheetId: string, apiKey: string): Promise<CellData[][]> {
-  // Use includeGridData to get hyperlinks
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}?includeGridData=true&ranges=A:Z&key=${apiKey}`
-  const res = await fetch(url)
+// Download .xlsx file from Google Drive and parse with hyperlinks
+async function fetchAndParseXlsx(sheetId: string): Promise<{ rows: Array<Array<{text: string, url: string | null}>> }> {
+  // Google Drive direct download for public files
+  const downloadUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=xlsx`
+  console.log('Downloading xlsx from:', downloadUrl)
   
+  const res = await fetch(downloadUrl, { redirect: 'follow' })
   if (!res.ok) {
-    const text = await res.text()
-    console.error('Sheets API error:', res.status, text)
-    throw new Error(`Sheets API failed (${res.status})`)
+    throw new Error(`Failed to download xlsx (${res.status})`)
   }
   
-  const data = await res.json()
-  const rows: CellData[][] = []
+  const arrayBuffer = await res.arrayBuffer()
+  console.log('Downloaded bytes:', arrayBuffer.byteLength)
   
-  const sheet = data.sheets?.[0]
-  if (!sheet?.data?.[0]?.rowData) {
-    console.log('No row data found')
-    return rows
-  }
+  const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array' })
+  const sheetName = workbook.SheetNames[0]
+  const sheet = workbook.Sheets[sheetName]
   
-  for (const rowData of sheet.data[0].rowData) {
-    const cells: CellData[] = []
-    if (rowData.values) {
-      for (const cell of rowData.values) {
-        const text = cell.formattedValue || cell.effectiveValue?.stringValue || ''
-        // Hyperlink can be in cell.hyperlink or in cell.textFormatRuns
-        let url: string | null = cell.hyperlink || null
-        
-        // Also check effectiveFormat for link
-        if (!url && cell.effectiveFormat?.textFormat?.link?.uri) {
-          url = cell.effectiveFormat.textFormat.link.uri
-        }
-        
-        // Check textFormatRuns for inline hyperlinks
-        if (!url && cell.textFormatRuns) {
-          for (const run of cell.textFormatRuns) {
-            if (run.format?.link?.uri) {
-              url = run.format.link.uri
-              break
-            }
-          }
-        }
-        
-        cells.push({ text: text.trim(), url })
+  if (!sheet) throw new Error('No sheet found in workbook')
+  
+  const range = XLSX.utils.decode_range(sheet['!ref'] || 'A1')
+  const rows: Array<Array<{text: string, url: string | null}>> = []
+  
+  for (let r = range.s.r; r <= range.e.r; r++) {
+    const row: Array<{text: string, url: string | null}> = []
+    for (let c = range.s.c; c <= range.e.c; c++) {
+      const cellRef = XLSX.utils.encode_cell({ r, c })
+      const cell = sheet[cellRef]
+      
+      if (!cell) {
+        row.push({ text: '', url: null })
+        continue
       }
+      
+      const text = (cell.v !== undefined && cell.v !== null) ? String(cell.v) : ''
+      // Hyperlinks are stored in cell.l.Target
+      const url = cell.l?.Target || null
+      
+      row.push({ text: text.trim(), url })
     }
-    rows.push(cells)
+    rows.push(row)
   }
   
-  return rows
+  return { rows }
 }
 
-function parseSheetData(rows: CellData[][]): ParsedItem[] {
+function parseSheetData(rows: Array<Array<{text: string, url: string | null}>>): ParsedItem[] {
   const items: ParsedItem[] = []
   let currentCategory = 'כללי'
 
@@ -92,7 +81,7 @@ function parseSheetData(rows: CellData[][]): ParsedItem[] {
     const hasUrls = row.slice(1).some(c => c.url)
     
     if (!hasUrls) {
-      // Header row
+      // Header row - no links in any cell
       if (row[0].text.length > 1 && !row[0].url) {
         currentCategory = row[0].text
       }
@@ -126,17 +115,14 @@ Deno.serve(async (req) => {
     const { sheetUrl, sourceVideoId, debug } = await req.json()
     if (!sheetUrl) throw new Error('sheetUrl is required')
 
-    const apiKey = Deno.env.get('YOUTUBE_API_KEY')
-    if (!apiKey) throw new Error('YOUTUBE_API_KEY not configured (also used for Sheets API)')
-
     console.log('Parsing sheet:', sheetUrl)
 
     const sheetIdMatch = sheetUrl.match(/\/d\/([a-zA-Z0-9_-]+)/)
     if (!sheetIdMatch) throw new Error('Invalid Google Sheets URL')
     const sheetId = sheetIdMatch[1]
 
-    const rows = await fetchSheetWithHyperlinks(sheetId, apiKey)
-    console.log(`Parsed ${rows.length} rows with hyperlink data`)
+    const { rows } = await fetchAndParseXlsx(sheetId)
+    console.log(`Parsed ${rows.length} rows from xlsx`)
 
     const items = parseSheetData(rows)
     console.log(`Extracted ${items.length} items (articles: ${items.filter(i => i.type === 'article').length}, podcasts: ${items.filter(i => i.type === 'podcast').length})`)

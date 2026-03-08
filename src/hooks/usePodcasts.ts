@@ -33,13 +33,6 @@ export const usePodcasts = () => {
       }
 
       return all;
-
-      if (error) {
-        console.error("Error fetching podcasts:", error);
-        throw error;
-      }
-
-      return data || [];
     },
   });
 };

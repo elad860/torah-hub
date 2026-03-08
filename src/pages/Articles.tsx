@@ -1,5 +1,5 @@
 import { Layout } from "@/components/Layout";
-import { FileText } from "lucide-react";
+import { FileText, Download, ExternalLink } from "lucide-react";
 import { useArticles } from "@/hooks/useArticles";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

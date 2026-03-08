@@ -220,6 +220,8 @@ Deno.serve(async (req) => {
             audio_url: item.url,
             description: item.category,
             source_video_id: sourceVideoId || null,
+            hebrew_year: hebrewYear,
+            content_text: `${item.title}. ${item.category}.`,
           })
           if (!error) podcastsInserted++
           else console.error('Insert error:', error)

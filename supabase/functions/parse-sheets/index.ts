@@ -5,63 +5,12 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Parse HTML table from Google Sheets export
-function parseHTMLTable(html: string): string[][] {
-  const rows: string[][] = []
-  
-  // Find all <tr> elements
-  const trRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/gi
-  let trMatch
-  while ((trMatch = trRegex.exec(html)) !== null) {
-    const rowHtml = trMatch[1]
-    const cells: string[] = []
-    
-    // Find all <td> elements in this row
-    const tdRegex = /<td[^>]*>([\s\S]*?)<\/td>/gi
-    let tdMatch
-    while ((tdMatch = tdRegex.exec(rowHtml)) !== null) {
-      cells.push(tdMatch[1])
-    }
-    
-    if (cells.length > 0) rows.push(cells)
-  }
-  
-  return rows
-}
-
-// Extract URL from HTML cell content (preserves <a href> links)
-function extractUrlFromHtml(cellHtml: string): { url: string | null, text: string } {
-  const linkMatch = cellHtml.match(/<a[^>]+href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/)
-  if (linkMatch) {
-    // Clean up URL (Google redirect)
-    let url = linkMatch[1]
-    // Google Sheets wraps links in redirects
-    const googleRedirect = url.match(/[?&]q=(https?[^&]+)/)
-    if (googleRedirect) {
-      url = decodeURIComponent(googleRedirect[1])
-    }
-    const text = linkMatch[2].replace(/<[^>]+>/g, '').trim()
-    return { url, text }
-  }
-  
-  // Plain text, no link
-  const plainText = cellHtml.replace(/<[^>]+>/g, '').trim()
-  return { url: null, text: plainText }
-}
-
 function isYouTubeUrl(url: string): boolean {
   return url.includes('youtube.com') || url.includes('youtu.be')
 }
 
 function isAudioLink(text: string): boolean {
   return text.includes('לשמיעת') || text.includes('שמיעה') || text.includes('לשמיעה')
-}
-
-function isHeaderRow(cells: Array<{url: string | null, text: string}>): boolean {
-  if (!cells[0] || cells[0].text.length === 0) return false
-  if (cells[0].url) return false
-  // No URLs in any cell
-  return cells.slice(1).every(c => !c.url)
 }
 
 interface ParsedItem {
@@ -71,37 +20,109 @@ interface ParsedItem {
   type: 'article' | 'podcast'
 }
 
-function parseSheetData(rows: string[][]): ParsedItem[] {
+// Try multiple export strategies
+async function fetchSheetContent(sheetId: string): Promise<{ rows: string[][], format: string }> {
+  // Strategy 1: Google Sheets API (public access, no auth needed for public sheets)
+  try {
+    const apiUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/A:Z?key=${Deno.env.get('YOUTUBE_API_KEY')}`
+    const res = await fetch(apiUrl)
+    if (res.ok) {
+      const data = await res.json()
+      if (data.values) {
+        console.log('Fetched via Sheets API')
+        return { rows: data.values, format: 'api-plain' }
+      }
+    }
+  } catch (e) {
+    console.log('Sheets API failed:', e)
+  }
+
+  // Strategy 2: TSV export (sometimes works better than CSV for preserving structure)
+  try {
+    const tsvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=tsv`
+    const res = await fetch(tsvUrl, { redirect: 'follow' })
+    if (res.ok) {
+      const text = await res.text()
+      const rows = text.split('\n').map(line => line.split('\t').map(c => c.trim()))
+      console.log('Fetched via TSV export')
+      return { rows, format: 'tsv' }
+    }
+  } catch (e) {
+    console.log('TSV export failed:', e)
+  }
+
+  // Strategy 3: CSV export as fallback
+  const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv`
+  const res = await fetch(csvUrl, { redirect: 'follow' })
+  if (!res.ok) throw new Error(`All export strategies failed (${res.status})`)
+  const text = await res.text()
+  const rows = text.split('\n').map(line => {
+    // Simple CSV parse
+    const cells: string[] = []
+    let current = ''
+    let inQuotes = false
+    for (const ch of line) {
+      if (inQuotes) {
+        if (ch === '"') inQuotes = false
+        else current += ch
+      } else {
+        if (ch === '"') inQuotes = true
+        else if (ch === ',') { cells.push(current.trim()); current = '' }
+        else current += ch
+      }
+    }
+    cells.push(current.trim())
+    return cells
+  })
+  console.log('Fetched via CSV export')
+  return { rows, format: 'csv' }
+}
+
+function parseSheetRows(rows: string[][]): ParsedItem[] {
   const items: ParsedItem[] = []
   let currentCategory = 'כללי'
 
   for (const row of rows) {
-    // Parse each cell for URLs and text
-    const parsed = row.map(cell => extractUrlFromHtml(cell))
+    if (!row[0] || row[0].trim().length === 0) continue
+    const firstCell = row[0].trim()
     
-    // Skip empty rows
-    if (!parsed[0] || parsed[0].text.length === 0) continue
-    // Skip metadata rows
-    if (parsed[0].text.includes('ניתן לסייע') || parsed[0].text.includes('נדרים')) continue
+    // Skip metadata
+    if (firstCell.includes('ניתן לסייע') || firstCell.includes('נדרים פלוס')) continue
 
-    // Check if header row
-    if (isHeaderRow(parsed)) {
-      currentCategory = parsed[0].text
+    // Check for URLs in cells
+    const cellUrls: Array<{url: string, text: string}> = []
+    for (let i = 0; i < row.length; i++) {
+      const cell = row[i] || ''
+      // Extract URLs from cell
+      const urlMatches = cell.match(/https?:\/\/[^\s,)"]+/g)
+      if (urlMatches) {
+        for (const url of urlMatches) {
+          cellUrls.push({ url, text: cell })
+        }
+      }
+    }
+
+    // If no URLs found, this might be a header row
+    if (cellUrls.length === 0) {
+      // Check if other cells are empty (header pattern)
+      const otherCellsEmpty = row.slice(1).every(c => !c || c.trim().length === 0 || !c.match(/https?:\/\//))
+      if (otherCellsEmpty && firstCell.length > 1) {
+        currentCategory = firstCell
+      }
       continue
     }
 
-    const title = parsed[0].text
-
-    // Process cells with URLs
-    for (let i = 1; i < parsed.length; i++) {
-      const { url, text } = parsed[i]
-      if (!url) continue
+    // This is a data row with URLs
+    // If the cell text is just "לשמיעת השיעור לחץ כאן" without a URL,
+    // that means the URLs were stripped. In that case we can't extract them.
+    // But if we found URLs, process them
+    for (const { url, text } of cellUrls) {
       if (isYouTubeUrl(url)) continue
-
+      
       if (isAudioLink(text)) {
-        items.push({ title, category: currentCategory, url, type: 'podcast' })
+        items.push({ title: firstCell, category: currentCategory, url, type: 'podcast' })
       } else {
-        items.push({ title, category: currentCategory, url, type: 'article' })
+        items.push({ title: firstCell, category: currentCategory, url, type: 'article' })
       }
     }
   }
@@ -118,37 +139,26 @@ Deno.serve(async (req) => {
     const { sheetUrl, sourceVideoId, debug } = await req.json()
     if (!sheetUrl) throw new Error('sheetUrl is required')
 
-    console.log('Parsing sheet:', sheetUrl, 'from video:', sourceVideoId)
+    console.log('Parsing sheet:', sheetUrl)
 
     const sheetIdMatch = sheetUrl.match(/\/d\/([a-zA-Z0-9_-]+)/)
-    if (!sheetIdMatch) throw new Error('Invalid Google Sheets URL: ' + sheetUrl)
+    if (!sheetIdMatch) throw new Error('Invalid Google Sheets URL')
     const sheetId = sheetIdMatch[1]
 
-    // Use HTML export to preserve hyperlinks
-    const htmlUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=html`
-    console.log('Fetching HTML from:', htmlUrl)
+    const { rows, format } = await fetchSheetContent(sheetId)
+    console.log(`Parsed ${rows.length} rows (format: ${format})`)
 
-    const htmlResponse = await fetch(htmlUrl, { redirect: 'follow' })
-    if (!htmlResponse.ok) {
-      throw new Error(`Failed to fetch sheet (${htmlResponse.status}): ${htmlResponse.statusText}`)
-    }
-
-    const htmlText = await htmlResponse.text()
-    console.log('HTML length:', htmlText.length)
-
-    const rows = parseHTMLTable(htmlText)
-    console.log('Parsed rows:', rows.length)
-
-    const items = parseSheetData(rows)
-    console.log('Extracted items:', items.length, '(articles:', items.filter(i => i.type === 'article').length, ', podcasts:', items.filter(i => i.type === 'podcast').length, ')')
+    const items = parseSheetRows(rows)
+    console.log(`Extracted ${items.length} items (articles: ${items.filter(i => i.type === 'article').length}, podcasts: ${items.filter(i => i.type === 'podcast').length})`)
 
     if (debug) {
       return new Response(
         JSON.stringify({
           success: true,
           debug: true,
-          sampleRows: rows.slice(0, 5).map(r => r.map(c => c.substring(0, 200))),
-          items: items.slice(0, 20),
+          format,
+          sampleRows: rows.slice(0, 10).map(r => r.map(c => (c || '').substring(0, 100))),
+          items: items.slice(0, 30),
           totalRows: rows.length,
           totalItems: items.length,
         }),
@@ -180,7 +190,7 @@ Deno.serve(async (req) => {
             source_video_id: sourceVideoId || null,
           })
           if (!error) articlesInserted++
-          else console.error('Article insert error:', error)
+          else console.error('Insert error:', error)
         }
       } else {
         const { data: existing } = await supabase
@@ -197,19 +207,13 @@ Deno.serve(async (req) => {
             source_video_id: sourceVideoId || null,
           })
           if (!error) podcastsInserted++
-          else console.error('Podcast insert error:', error)
+          else console.error('Insert error:', error)
         }
       }
     }
 
     return new Response(
-      JSON.stringify({
-        success: true,
-        parsed: items.length,
-        articlesInserted,
-        podcastsInserted,
-        sheetId,
-      }),
+      JSON.stringify({ success: true, parsed: items.length, articlesInserted, podcastsInserted, sheetId }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {

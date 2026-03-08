@@ -1,11 +1,10 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, Heart } from "lucide-react";
+import { Menu, X, Heart, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import rabbiBanner from "@/assets/rabbi-banner.png";
 import { CartDrawer } from "@/components/CartDrawer";
-import { AISearchBox } from "@/components/AISearchBox";
 
 const DONATION_URL = "https://www.matara.pro/nedarimplus/online/?mosad=7005270";
 
@@ -58,7 +57,12 @@ export function Header() {
 
           {/* AI Search, Cart & Donate - Desktop */}
           <div className="hidden md:flex items-center gap-2">
-            <AISearchBox />
+            <Link to="/ai-assistant">
+              <Button variant="outline" size="sm" className="gap-2 border-gold/30 text-gold hover:bg-gold/10 hover:text-gold">
+                <Sparkles className="w-4 h-4" />
+                <span className="hidden sm:inline">עוזר AI</span>
+              </Button>
+            </Link>
             <CartDrawer />
             <a
               href={DONATION_URL}

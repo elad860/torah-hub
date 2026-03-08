@@ -9,6 +9,31 @@ const YOUTUBE_API_BASE = 'https://www.googleapis.com/youtube/v3'
 const CHANNEL_HANDLE = '@yagdil'
 const TRIGGER_TEXT = 'קישור לדברי תורה'
 
+// Hebrew year calculation
+const ROSH_HASHANA: Record<number, [number, number]> = {
+  2015: [9, 14], 2016: [10, 3], 2017: [9, 21], 2018: [9, 10],
+  2019: [9, 30], 2020: [9, 19], 2021: [9, 7], 2022: [9, 26],
+  2023: [9, 16], 2024: [10, 3], 2025: [9, 23], 2026: [9, 12],
+  2027: [10, 2], 2028: [9, 21], 2029: [9, 10], 2030: [9, 28],
+}
+
+const HEBREW_YEAR_NAMES: Record<number, string> = {
+  5775: 'תשע"ה', 5776: 'תשע"ו', 5777: 'תשע"ז', 5778: 'תשע"ח',
+  5779: 'תשע"ט', 5780: 'תש"פ', 5781: 'תשפ"א', 5782: 'תשפ"ב',
+  5783: 'תשפ"ג', 5784: 'תשפ"ד', 5785: 'תשפ"ה', 5786: 'תשפ"ו',
+  5787: 'תשפ"ז', 5788: 'תשפ"ח', 5789: 'תשפ"ט', 5790: 'תש"צ',
+}
+
+function calcHebrewYear(dateStr: string): string | null {
+  const date = new Date(dateStr)
+  const year = date.getFullYear()
+  const rh = ROSH_HASHANA[year]
+  if (!rh) return null
+  const rhDate = new Date(year, rh[0] - 1, rh[1])
+  const num = date >= rhDate ? year + 3761 : year + 3760
+  return HEBREW_YEAR_NAMES[num] || null
+}
+
 async function getChannelId(apiKey: string): Promise<string> {
   const res = await fetch(`${YOUTUBE_API_BASE}/channels?forHandle=${CHANNEL_HANDLE}&part=id&key=${apiKey}`)
   const data = await res.json()
@@ -22,7 +47,7 @@ async function getUploadsPlaylistId(apiKey: string, channelId: string): Promise<
   return data.items[0].contentDetails.relatedPlaylists.uploads
 }
 
-async function getVideosBatch(apiKey: string, uploadsPlaylistId: string, pageToken: string): Promise<{videos: Array<{videoId: string, title: string, description: string}>, nextPageToken: string}> {
+async function getVideosBatch(apiKey: string, uploadsPlaylistId: string, pageToken: string) {
   const url = `${YOUTUBE_API_BASE}/playlistItems?playlistId=${uploadsPlaylistId}&part=snippet&maxResults=50&key=${apiKey}${pageToken ? `&pageToken=${pageToken}` : ''}`
   const res = await fetch(url)
   const data = await res.json()
@@ -36,6 +61,7 @@ async function getVideosBatch(apiKey: string, uploadsPlaylistId: string, pageTok
       videoId: item.snippet.resourceId.videoId,
       title: item.snippet.title,
       description: item.snippet.description || '',
+      publishedAt: item.snippet.publishedAt || '',
     }))
   
   return { videos, nextPageToken: data.nextPageToken || '' }
@@ -57,19 +83,24 @@ Deno.serve(async (req) => {
     if (!apiKey) throw new Error('YOUTUBE_API_KEY not configured')
 
     const body = await req.json().catch(() => ({}))
-    const mode = body.mode || 'scan-only' // scan-only = just find sheets, process = find + parse
+    const mode = body.mode || 'scan-only'
     const pageToken = body.pageToken || ''
-    const batchCount = body.batchCount || 5 // number of API pages (50 videos each)
+    const batchCount = body.batchCount || 3
+    const autoEnrich = body.autoEnrich !== false // auto-tag hebrew year + content_text by default
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
     console.log('Getting channel ID...')
     const channelId = await getChannelId(apiKey)
     const uploadsPlaylistId = await getUploadsPlaylistId(apiKey, channelId)
 
-    // Scan in batches of pages
-    const results: Array<{videoId: string, videoTitle: string, sheetUrl: string}> = []
+    const results: Array<{videoId: string, videoTitle: string, sheetUrl: string, publishedAt: string}> = []
     let currentPageToken = pageToken
     let pagesProcessed = 0
     let videosScanned = 0
+    let enrichedCount = 0
 
     for (let i = 0; i < batchCount; i++) {
       const { videos, nextPageToken } = await getVideosBatch(apiKey, uploadsPlaylistId, currentPageToken)
@@ -78,7 +109,7 @@ Deno.serve(async (req) => {
       for (const video of videos) {
         const sheetUrls = findSheetUrls(video.description)
         for (const sheetUrl of sheetUrls) {
-          results.push({ videoId: video.videoId, videoTitle: video.title, sheetUrl })
+          results.push({ videoId: video.videoId, videoTitle: video.title, sheetUrl, publishedAt: video.publishedAt })
         }
       }
       
@@ -90,20 +121,17 @@ Deno.serve(async (req) => {
     console.log(`Scanned ${videosScanned} videos across ${pagesProcessed} pages. Found ${results.length} sheet references.`)
 
     // Deduplicate sheets
-    const uniqueSheets = new Map<string, {videoId: string, videoTitle: string}>()
+    const uniqueSheets = new Map<string, {videoId: string, videoTitle: string, publishedAt: string}>()
     for (const r of results) {
       const id = r.sheetUrl.match(/\/d\/([a-zA-Z0-9_-]+)/)?.[1]
       if (id && !uniqueSheets.has(id)) {
-        uniqueSheets.set(id, { videoId: r.videoId, videoTitle: r.videoTitle })
+        uniqueSheets.set(id, { videoId: r.videoId, videoTitle: r.videoTitle, publishedAt: r.publishedAt })
       }
     }
 
-    // If mode is process, call parse-sheets for each
+    // Parse sheets if mode=process
     let parseResults: any[] = []
     if (mode === 'process' && uniqueSheets.size > 0) {
-      const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-
       for (const [sheetId, info] of uniqueSheets) {
         const sheetUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/edit`
         console.log(`Parsing sheet ${sheetId} from video "${info.videoTitle}"`)
@@ -121,18 +149,57 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Auto-enrich: tag hebrew_year and content_text for items missing them
+    if (autoEnrich) {
+      // Enrich articles missing hebrew_year
+      const { data: articlesNoYear } = await supabase
+        .from('articles')
+        .select('id, created_at, title, category, source_video_id')
+        .is('hebrew_year', null)
+        .limit(200)
+      
+      if (articlesNoYear?.length) {
+        for (const a of articlesNoYear) {
+          const hy = calcHebrewYear(a.created_at)
+          const contentText = `${a.title}. קטגוריה: ${a.category}.`
+          const update: any = {}
+          if (hy) update.hebrew_year = hy
+          if (!a.source_video_id) update.content_text = contentText
+          if (Object.keys(update).length > 0) {
+            await supabase.from('articles').update(update).eq('id', a.id)
+            enrichedCount++
+          }
+        }
+      }
+
+      // Enrich podcasts missing hebrew_year
+      const { data: podcastsNoYear } = await supabase
+        .from('podcasts')
+        .select('id, created_at, title, description')
+        .is('hebrew_year', null)
+        .limit(200)
+      
+      if (podcastsNoYear?.length) {
+        for (const p of podcastsNoYear) {
+          const hy = calcHebrewYear(p.created_at)
+          const update: any = {}
+          if (hy) update.hebrew_year = hy
+          if (!p.content_text) update.content_text = `${p.title}. ${p.description || ''}`
+          if (Object.keys(update).length > 0) {
+            await supabase.from('podcasts').update(update).eq('id', p.id)
+            enrichedCount++
+          }
+        }
+      }
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
         videosScanned,
         pagesProcessed,
         sheetsFound: uniqueSheets.size,
-        sheets: Array.from(uniqueSheets.entries()).map(([id, info]) => ({
-          sheetId: id,
-          sheetUrl: `https://docs.google.com/spreadsheets/d/${id}/edit`,
-          videoId: info.videoId,
-          videoTitle: info.videoTitle,
-        })),
+        enrichedCount,
         nextPageToken: currentPageToken || null,
         hasMore: !!currentPageToken,
         parseResults: parseResults.length > 0 ? parseResults : undefined,

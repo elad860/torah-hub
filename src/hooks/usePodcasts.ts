@@ -7,6 +7,7 @@ export interface Podcast {
   description: string | null;
   spotify_url: string;
   audio_url: string | null;
+  hebrew_year: string | null;
   created_at: string;
 }
 

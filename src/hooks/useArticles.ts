@@ -8,6 +8,7 @@ export interface Article {
   category: string;
   image_url: string | null;
   download_url: string | null;
+  hebrew_year: string | null;
   created_at: string;
 }
 

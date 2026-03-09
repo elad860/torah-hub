@@ -5,7 +5,7 @@ import { useArticles } from "@/hooks/useArticles";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
 
 const HEBREW_LETTERS = ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", "ז׳", "ח׳", "ט׳", "י׳", "י״א", "י״ב", "י״ג", "י״ד", "ט״ו", "ט״ז", "י״ז", "י״ח", "י״ט", "כ׳"];
 
@@ -153,16 +153,23 @@ const Articles = () => {
 
       {/* Download Modal */}
       <Dialog open={!!selectedArticle} onOpenChange={(open) => !open && setSelectedArticle(null)}>
-        <DialogContent className="max-w-2xl border-gold/30 p-0 overflow-hidden max-h-[85vh] flex flex-col" style={{
-          background: 'linear-gradient(135deg, hsl(35 30% 13%), hsl(30 20% 10%))',
-        }}>
+        <DialogContent
+          className="max-w-2xl border-gold/30 p-0"
+          style={{
+            background: 'linear-gradient(135deg, hsl(35 30% 13%), hsl(30 20% 10%))',
+            display: 'flex',
+            flexDirection: 'column',
+            maxHeight: '85vh',
+            overflow: 'hidden',
+          }}
+        >
           {/* Decorative top bar */}
           <div className="h-1 w-full bg-gradient-to-l from-gold/80 via-gold to-gold/80 flex-shrink-0" />
 
-          {/* Sticky header */}
+          {/* Fixed header — never scrolls */}
           <div className="p-6 pb-4 flex-shrink-0 border-b border-gold/10">
             <DialogHeader>
-              <DialogTitle className="text-white text-xl font-bold text-right leading-relaxed">
+              <DialogTitle className="text-white text-xl font-bold text-right leading-relaxed pr-6">
                 {selectedArticle?.title}
               </DialogTitle>
               <div className="flex items-center gap-2 mt-2">
@@ -175,14 +182,24 @@ const Articles = () => {
               </div>
             </DialogHeader>
             {selectedArticle && selectedArticle.links.length > 0 && (
-              <p className="text-white/50 text-sm mt-4">{selectedArticle.links.length} מסמכים זמינים להורדה</p>
+              <p className="text-white/50 text-sm mt-3">
+                {selectedArticle.links.length} מסמכים זמינים להורדה
+              </p>
             )}
           </div>
 
-          {/* Scrollable grid area */}
+          {/* Scrollable body */}
           {selectedArticle && selectedArticle.links.length > 0 ? (
-            <ScrollArea className="flex-1 min-h-0">
-              <div className="p-6 pt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div
+              className="articles-modal-scroll"
+              style={{
+                overflowY: 'auto',
+                flex: '1 1 0%',
+                minHeight: 0,
+                WebkitOverflowScrolling: 'touch',
+              }}
+            >
+              <div className="p-6 pt-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {selectedArticle.links.map((url, idx) => {
                   const hebrewPart = toHebrewLabel(idx, selectedArticle!.links.length);
                   const fileType = url.includes("drive.google") ? "Google Drive" : "PDF";
@@ -197,7 +214,7 @@ const Articles = () => {
                       <div className="w-12 h-12 rounded-full bg-gold/10 flex items-center justify-center group-hover:bg-gold/20 transition-colors">
                         <FileText className="w-6 h-6 text-gold" />
                       </div>
-                      <span className="text-white font-semibold text-sm group-hover:text-gold transition-colors">
+                      <span className="text-white font-semibold text-sm group-hover:text-gold transition-colors leading-tight">
                         {hebrewPart}
                       </span>
                       <span className="text-white/30 text-[11px]" dir="ltr">{fileType}</span>
@@ -209,7 +226,7 @@ const Articles = () => {
                   );
                 })}
               </div>
-            </ScrollArea>
+            </div>
           ) : (
             <div className="text-center py-10 flex-shrink-0">
               <FileText className="w-10 h-10 text-white/20 mx-auto mb-3" />

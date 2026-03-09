@@ -1,10 +1,18 @@
 import { useState, useMemo } from "react";
 import { Layout } from "@/components/Layout";
-import { FileText, BookOpen, Download, X } from "lucide-react";
+import { FileText, BookOpen, Download } from "lucide-react";
 import { useArticles } from "@/hooks/useArticles";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+
+const HEBREW_LETTERS = ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", "ז׳", "ח׳", "ט׳", "י׳", "י״א", "י״ב", "י״ג", "י״ד", "ט״ו", "ט״ז", "י״ז", "י״ח", "י״ט", "כ׳"];
+
+const toHebrewLabel = (idx: number, total: number): string => {
+  if (total === 1) return "הורדת המאמר";
+  return `חלק ${HEBREW_LETTERS[idx] ?? idx + 1}`;
+};
 
 interface MergedArticle {
   key: string;
@@ -145,14 +153,15 @@ const Articles = () => {
 
       {/* Download Modal */}
       <Dialog open={!!selectedArticle} onOpenChange={(open) => !open && setSelectedArticle(null)}>
-        <DialogContent className="max-w-md border-gold/30 p-0 overflow-hidden" style={{
+        <DialogContent className="max-w-2xl border-gold/30 p-0 overflow-hidden max-h-[85vh] flex flex-col" style={{
           background: 'linear-gradient(135deg, hsl(35 30% 13%), hsl(30 20% 10%))',
         }}>
           {/* Decorative top bar */}
-          <div className="h-1 w-full bg-gradient-to-l from-gold/80 via-gold to-gold/80" />
+          <div className="h-1 w-full bg-gradient-to-l from-gold/80 via-gold to-gold/80 flex-shrink-0" />
 
-          <div className="p-6">
-            <DialogHeader className="mb-6">
+          {/* Sticky header */}
+          <div className="p-6 pb-4 flex-shrink-0 border-b border-gold/10">
+            <DialogHeader>
               <DialogTitle className="text-white text-xl font-bold text-right leading-relaxed">
                 {selectedArticle?.title}
               </DialogTitle>
@@ -165,39 +174,48 @@ const Articles = () => {
                 )}
               </div>
             </DialogHeader>
-
-            {selectedArticle && selectedArticle.links.length > 0 ? (
-              <div className="space-y-3">
-                <p className="text-white/50 text-sm mb-4">בחרו מסמך להורדה:</p>
-                {selectedArticle.links.map((url, idx) => (
-                  <a
-                    key={idx}
-                    href={url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-3 w-full px-4 py-3 rounded-lg border border-gold/20 bg-gold/5 hover:bg-gold/15 hover:border-gold/40 transition-all duration-200 group"
-                  >
-                    <div className="w-10 h-10 rounded-full bg-gold/10 flex items-center justify-center flex-shrink-0 group-hover:bg-gold/20 transition-colors">
-                      <Download className="w-5 h-5 text-gold" />
-                    </div>
-                    <div className="text-right flex-1">
-                      <p className="text-white font-medium text-sm group-hover:text-gold transition-colors">
-                        {selectedArticle.links.length === 1 ? "הורדת המאמר" : `מסמך ${idx + 1}`}
-                      </p>
-                      <p className="text-white/30 text-xs truncate max-w-[200px]" dir="ltr">
-                        {url.includes("drive.google") ? "Google Drive" : "PDF"}
-                      </p>
-                    </div>
-                  </a>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-6">
-                <FileText className="w-10 h-10 text-white/20 mx-auto mb-3" />
-                <p className="text-white/40 text-sm">אין קישורים זמינים להורדה</p>
-              </div>
+            {selectedArticle && selectedArticle.links.length > 0 && (
+              <p className="text-white/50 text-sm mt-4">{selectedArticle.links.length} מסמכים זמינים להורדה</p>
             )}
           </div>
+
+          {/* Scrollable grid area */}
+          {selectedArticle && selectedArticle.links.length > 0 ? (
+            <ScrollArea className="flex-1 min-h-0">
+              <div className="p-6 pt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {selectedArticle.links.map((url, idx) => {
+                  const hebrewPart = toHebrewLabel(idx, selectedArticle!.links.length);
+                  const fileType = url.includes("drive.google") ? "Google Drive" : "PDF";
+                  return (
+                    <a
+                      key={idx}
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group flex flex-col items-center gap-2 rounded-xl border border-gold/20 bg-gold/5 p-4 text-center hover:bg-gold/15 hover:border-gold/40 hover:scale-[1.03] transition-all duration-200"
+                    >
+                      <div className="w-12 h-12 rounded-full bg-gold/10 flex items-center justify-center group-hover:bg-gold/20 transition-colors">
+                        <FileText className="w-6 h-6 text-gold" />
+                      </div>
+                      <span className="text-white font-semibold text-sm group-hover:text-gold transition-colors">
+                        {hebrewPart}
+                      </span>
+                      <span className="text-white/30 text-[11px]" dir="ltr">{fileType}</span>
+                      <span className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-gold/80 group-hover:text-gold transition-colors">
+                        <Download className="w-3.5 h-3.5" />
+                        הורדה
+                      </span>
+                    </a>
+                  );
+                })}
+              </div>
+            </ScrollArea>
+          ) : (
+            <div className="text-center py-10 flex-shrink-0">
+              <FileText className="w-10 h-10 text-white/20 mx-auto mb-3" />
+              <p className="text-white/40 text-sm">אין קישורים זמינים להורדה</p>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </Layout>

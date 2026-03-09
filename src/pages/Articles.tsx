@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { FilterDrawer } from "@/components/FilterDrawer";
 
 const HEBREW_LETTERS = ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", "ז׳", "ח׳", "ט׳", "י׳", "י״א", "י״ב", "י״ג", "י״ד", "ט״ו", "ט״ז", "י״ז", "י״ח", "י״ט", "כ׳"];
 
@@ -87,6 +88,7 @@ const Articles = () => {
   }, [merged, selectedYear, selectedCategory, searchQuery]);
 
   const hasActiveFilters = searchQuery || selectedCategory || selectedYear !== "all";
+  const activeFilterCount = (selectedCategory ? 1 : 0) + (selectedYear !== "all" ? 1 : 0);
 
   const clearAll = () => {
     setSearchQuery("");
@@ -108,12 +110,12 @@ const Articles = () => {
         </div>
       </section>
 
-      {/* Filters — sticky, matching Lessons page */}
+      {/* Filters — sticky */}
       <section className="py-4 bg-background/80 border-b border-border sticky top-16 md:top-20 z-40 backdrop-blur-sm">
         <div className="container mx-auto px-4 space-y-3">
-          {/* Search */}
-          <div className="flex flex-col md:flex-row gap-3 items-center">
-            <div className="relative w-full md:w-80">
+          {/* Search + mobile filter */}
+          <div className="flex gap-3 items-center">
+            <div className="relative flex-1 md:w-80 md:flex-none">
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 type="search"
@@ -123,16 +125,25 @@ const Articles = () => {
                 className="pr-9 h-9 text-sm"
               />
             </div>
+            <FilterDrawer
+              categories={categories}
+              selectedCategory={selectedCategory}
+              onCategoryChange={setSelectedCategory}
+              years={years}
+              selectedYear={selectedYear}
+              onYearChange={setSelectedYear}
+              activeCount={activeFilterCount}
+            />
             {hasActiveFilters && (
-              <Button variant="ghost" size="sm" onClick={clearAll} className="text-muted-foreground text-xs gap-1">
+              <Button variant="ghost" size="sm" onClick={clearAll} className="text-muted-foreground text-xs gap-1 hidden md:flex">
                 <X className="w-3.5 h-3.5" />
                 נקה הכל
               </Button>
             )}
           </div>
 
-          {/* Category (Topic) filter chips */}
-          <div className="flex items-center gap-2 flex-wrap">
+          {/* Desktop filter chips */}
+          <div className="hidden md:flex items-center gap-2 flex-wrap">
             <Filter className="w-4 h-4 text-muted-foreground flex-shrink-0" />
             <span className="text-xs text-muted-foreground flex-shrink-0">נושא:</span>
             <Button
@@ -156,9 +167,9 @@ const Articles = () => {
             ))}
           </div>
 
-          {/* Hebrew year filter chips */}
+          {/* Year chips - desktop */}
           {years.length > 0 && (
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="hidden md:flex items-center gap-2 flex-wrap">
               <Filter className="w-4 h-4 text-muted-foreground flex-shrink-0" />
               <span className="text-xs text-muted-foreground flex-shrink-0">שנה:</span>
               <Button

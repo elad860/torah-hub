@@ -1,13 +1,29 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Search, Filter, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Filter, X, ChevronLeft, ChevronRight, BookOpen } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { VideoCard } from "@/components/VideoCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useFilteredLessons, useCategories } from "@/hooks/useLessons";
+import { FilterDrawer } from "@/components/FilterDrawer";
+import { CHUMASH_PARASHOT, CHUMASH_NAMES } from "@/lib/parasha-data";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 
 const PAGE_SIZE = 48;
+
+// Get unique hebrew years from lessons
+function useHebrewYears() {
+  return useQuery({
+    queryKey: ["lesson-hebrew-years"],
+    queryFn: async () => {
+      // Lessons don't have hebrew_year column, so we'll compute from published_at
+      // For now return empty - we need a different approach
+      return [] as string[];
+    },
+  });
+}
 
 const LessonsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -15,11 +31,18 @@ const LessonsPage = () => {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(categoryParam);
+  const [selectedChumash, setSelectedChumash] = useState<string | null>(null);
+  const [selectedParasha, setSelectedParasha] = useState<string | null>(null);
   const [page, setPage] = useState(0);
+
+  // Build search term: if parasha is selected, search by it
+  const effectiveSearch = selectedParasha
+    ? selectedParasha
+    : searchQuery;
 
   const { data, isLoading } = useFilteredLessons({
     category: selectedCategory,
-    search: searchQuery,
+    search: effectiveSearch,
     page,
     pageSize: PAGE_SIZE,
   });
@@ -30,22 +53,43 @@ const LessonsPage = () => {
   const totalCount = data?.total || 0;
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
+  const isParshatShavua = selectedCategory === "פרשת השבוע";
+
   const handleCategoryChange = (category: string | null) => {
     setSelectedCategory(category);
+    setSelectedChumash(null);
+    setSelectedParasha(null);
     setPage(0);
     const params: Record<string, string> = {};
     if (category) params.category = category;
     setSearchParams(params);
   };
 
+  const handleChumashChange = (chumash: string | null) => {
+    setSelectedChumash(chumash);
+    setSelectedParasha(null);
+    setPage(0);
+  };
+
+  const handleParashaChange = (parasha: string | null) => {
+    setSelectedParasha(parasha);
+    setPage(0);
+  };
+
   const clearAll = () => {
     setSearchQuery("");
     setSelectedCategory(null);
+    setSelectedChumash(null);
+    setSelectedParasha(null);
     setPage(0);
     setSearchParams({});
   };
 
-  const hasActiveFilters = searchQuery || selectedCategory;
+  const hasActiveFilters = searchQuery || selectedCategory || selectedParasha;
+
+  const activeFilterCount =
+    (selectedCategory ? 1 : 0) +
+    (selectedParasha ? 1 : 0);
 
   return (
     <Layout>
@@ -63,9 +107,9 @@ const LessonsPage = () => {
       {/* Filters */}
       <section className="py-4 bg-background/80 border-b border-border sticky top-16 md:top-20 z-40 backdrop-blur-sm">
         <div className="container mx-auto px-4 space-y-3">
-          {/* Search */}
-          <div className="flex flex-col md:flex-row gap-3 items-center">
-            <div className="relative w-full md:w-80">
+          {/* Search + mobile filter button */}
+          <div className="flex gap-3 items-center">
+            <div className="relative flex-1 md:w-80 md:flex-none">
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 type="search"
@@ -75,16 +119,25 @@ const LessonsPage = () => {
                 className="pr-9 h-9 text-sm"
               />
             </div>
+            <FilterDrawer
+              categories={categories || []}
+              selectedCategory={selectedCategory}
+              onCategoryChange={handleCategoryChange}
+              years={[]}
+              selectedYear="all"
+              onYearChange={() => {}}
+              activeCount={activeFilterCount}
+            />
             {hasActiveFilters && (
-              <Button variant="ghost" size="sm" onClick={clearAll} className="text-muted-foreground text-xs gap-1">
+              <Button variant="ghost" size="sm" onClick={clearAll} className="text-muted-foreground text-xs gap-1 hidden md:flex">
                 <X className="w-3.5 h-3.5" />
                 נקה הכל
               </Button>
             )}
           </div>
 
-          {/* Category filters */}
-          <div className="flex items-center gap-2 flex-wrap">
+          {/* Category filters - desktop */}
+          <div className="hidden md:flex items-center gap-2 flex-wrap">
             <Filter className="w-4 h-4 text-muted-foreground" />
             <Button
               variant={selectedCategory === null ? "gold" : "outline"}
@@ -106,6 +159,62 @@ const LessonsPage = () => {
               </Button>
             ))}
           </div>
+
+          {/* Hierarchical Chumash → Parasha filter (when פרשת השבוע is selected) */}
+          {isParshatShavua && (
+            <div className="space-y-2">
+              {/* Chumash selection */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <BookOpen className="w-4 h-4 text-gold flex-shrink-0" />
+                <span className="text-xs text-gold flex-shrink-0 font-medium">חומש:</span>
+                <Button
+                  variant={selectedChumash === null ? "gold" : "outline"}
+                  size="sm"
+                  className="text-xs h-7"
+                  onClick={() => handleChumashChange(null)}
+                >
+                  הכל
+                </Button>
+                {CHUMASH_NAMES.map((chumash) => (
+                  <Button
+                    key={chumash}
+                    variant={selectedChumash === chumash ? "gold" : "outline"}
+                    size="sm"
+                    className="text-xs h-7"
+                    onClick={() => handleChumashChange(chumash)}
+                  >
+                    {chumash}
+                  </Button>
+                ))}
+              </div>
+
+              {/* Parasha selection (only when chumash is selected) */}
+              {selectedChumash && (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs text-muted-foreground flex-shrink-0 mr-5">פרשה:</span>
+                  <Button
+                    variant={selectedParasha === null ? "gold" : "outline"}
+                    size="sm"
+                    className="text-xs h-7"
+                    onClick={() => handleParashaChange(null)}
+                  >
+                    כל הפרשות
+                  </Button>
+                  {CHUMASH_PARASHOT[selectedChumash]?.map((parasha) => (
+                    <Button
+                      key={parasha}
+                      variant={selectedParasha === parasha ? "gold" : "outline"}
+                      size="sm"
+                      className="text-xs h-7"
+                      onClick={() => handleParashaChange(parasha)}
+                    >
+                      {parasha}
+                    </Button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </section>
 

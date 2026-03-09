@@ -7,11 +7,35 @@ const corsHeaders = {
 
 // Detect Hebrew year patterns like תשפ"ה, תשפה, תשפ״ה
 function detectHebrewYear(query: string): string | null {
-  // Match common patterns: תשפ"ה, תשפ״ה, תשפה, תשפ'ה
   const hebrewYearRegex = /ת[שׂ][פצקרשת][א-ת]["״'׳]?[א-ת]?/g
   const matches = query.match(hebrewYearRegex)
   if (matches && matches.length > 0) return matches[0]
   return null
+}
+
+// Expand Hebrew synonyms for better search
+function expandSearchTerms(query: string): string[] {
+  const terms = [query]
+  const synonymMap: Record<string, string[]> = {
+    'אמונה': ['ביטחון', 'אמונה', 'השגחה'],
+    'תשובה': ['תשובה', 'חזרה בתשובה', 'וידוי'],
+    'שלום בית': ['שלום בית', 'זוגיות', 'משפחה'],
+    'כעס': ['כעס', 'סבלנות', 'מידות'],
+    'פרנסה': ['פרנסה', 'ביטחון', 'השתדלות'],
+    'תפילה': ['תפילה', 'תפלה', 'עבודת ה'],
+    'שבת': ['שבת', 'שבת קודש', 'הלכות שבת'],
+    'כשרות': ['כשרות', 'כשר', 'הלכות כשרות'],
+    'חינוך': ['חינוך', 'חינוך ילדים', 'הורים'],
+  }
+  
+  for (const [key, synonyms] of Object.entries(synonymMap)) {
+    if (query.includes(key)) {
+      for (const syn of synonyms) {
+        if (!terms.includes(syn)) terms.push(syn)
+      }
+    }
+  }
+  return terms
 }
 
 Deno.serve(async (req) => {
@@ -32,28 +56,40 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    const searchTerm = `%${query}%`
+    const searchTerms = expandSearchTerms(query)
     const detectedYear = detectHebrewYear(query)
 
-    // Parallel search across all 3 tables with content_text + title
+    // Build OR filter for multiple search terms
+    const buildSearchFilter = (columns: string[]) => {
+      const conditions: string[] = []
+      for (const term of searchTerms) {
+        const escaped = `%${term}%`
+        for (const col of columns) {
+          conditions.push(`${col}.ilike.${escaped}`)
+        }
+      }
+      return conditions.join(',')
+    }
+
+    // Parallel search across all 3 tables
     let lessonsQuery = supabase
       .from('lessons')
       .select('id, title, youtube_url, category, series, published_at, playlist_name')
-      .or(`title.ilike.${searchTerm}`)
+      .or(buildSearchFilter(['title']))
       .order('published_at', { ascending: false, nullsFirst: false })
       .limit(8)
 
     let articlesQuery = supabase
       .from('articles')
       .select('id, title, category, download_url, content_text, created_at, hebrew_year')
-      .or(`title.ilike.${searchTerm},content_text.ilike.${searchTerm}`)
+      .or(buildSearchFilter(['title', 'content_text']))
       .order('created_at', { ascending: false })
       .limit(8)
 
     let podcastsQuery = supabase
       .from('podcasts')
       .select('id, title, description, spotify_url, audio_url, content_text, created_at, hebrew_year')
-      .or(`title.ilike.${searchTerm},description.ilike.${searchTerm},content_text.ilike.${searchTerm}`)
+      .or(buildSearchFilter(['title', 'description', 'content_text']))
       .order('created_at', { ascending: false })
       .limit(8)
 
@@ -68,7 +104,7 @@ Deno.serve(async (req) => {
       podcastsQuery,
     ])
 
-    // Build structured results for frontend card rendering
+    // Build structured results
     interface ResultItem {
       type: 'lesson' | 'article' | 'podcast'
       id: string
@@ -98,7 +134,6 @@ Deno.serve(async (req) => {
     }
 
     if (articlesRes.data?.length) {
-      // Group articles by title+year to merge multi-part
       const articleMap = new Map<string, ResultItem & { all_urls?: string[] }>()
       for (const a of articlesRes.data) {
         const key = `${a.title}||${a.hebrew_year ?? ''}`
@@ -149,7 +184,7 @@ Deno.serve(async (req) => {
     if (articlesRes.data?.length) {
       context.push(`\nמאמרים שנמצאו (${articlesRes.data.length}):`)
       for (const a of articlesRes.data) {
-        const snippet = a.content_text ? ` | תוכן: ${a.content_text.substring(0, 200)}...` : ''
+        const snippet = a.content_text ? ` | תוכן: ${a.content_text.substring(0, 300)}...` : ''
         context.push(`- "${a.title}" (${a.category}${a.hebrew_year ? ', ' + a.hebrew_year : ''})${snippet}`)
       }
     }
@@ -157,7 +192,7 @@ Deno.serve(async (req) => {
     if (podcastsRes.data?.length) {
       context.push(`\nהקלטות שנמצאו (${podcastsRes.data.length}):`)
       for (const p of podcastsRes.data) {
-        const snippet = p.content_text ? ` | ${p.content_text.substring(0, 200)}...` : ''
+        const snippet = p.content_text ? ` | ${p.content_text.substring(0, 300)}...` : ''
         context.push(`- "${p.title}"${p.description ? ' (' + p.description + ')' : ''}${snippet}`)
       }
     }
@@ -171,8 +206,11 @@ Deno.serve(async (req) => {
     const systemPrompt = `אתה עוזר חכם ומקצועי באתר של הרב אורן נזרית ("יגדיל תורה").
 תפקידך לעזור למשתמשים למצוא ולהבין שיעורים, מאמרים והקלטות.
 ענה בעברית בצורה חמה, ידידותית ומכבדת.
-${hasResults ? 'יש תוצאות — תאר אותן בקצרה ובהתלהבות, ציין כמה פריטים מכל סוג. אל תכלול כתובות URL בתשובתך.' : 'לא נמצאו תוצאות — הצע מילות חיפוש חלופיות.'}
-אל תמציא תוכן שאינו קיים.`
+
+${hasResults ? `יש תוצאות — תאר אותן בקצרה ובהתלהבות, ציין כמה פריטים מכל סוג. אל תכלול כתובות URL בתשובתך.
+אם המשתמש ביקש "דבר תורה" או "כתוב דבר תורה", נסה לסנתז מהתוכן הקיים (content_text) סיכום תורני קצר ומשמעותי שמשלב את הנקודות העיקריות מהמקורות שנמצאו. ציין שזהו סיכום מבוסס על דברי הרב.` : 'לא נמצאו תוצאות — הצע מילות חיפוש חלופיות בעברית. הצע נושאים קרובים שייתכן שקיימים במאגר.'}
+
+חשוב: אל תמציא תוכן שאינו קיים. אם יש content_text, השתמש בו לסיכום.`
 
     const userPrompt = `שאלת המשתמש: "${query}"
 ${detectedYear ? `(זוהתה שנה עברית: ${detectedYear})` : ''}
@@ -182,19 +220,15 @@ ${contextStr}
 
 ענה בצורה ידידותית ומסכמת.`
 
-    // Encode the structured results as the FIRST SSE event
     const encoder = new TextEncoder()
     const { readable, writable } = new TransformStream()
     const writer = writable.getWriter()
 
-    // Stream: first send structured results, then pipe AI stream
     ;(async () => {
       try {
-        // Send structured results event
         const resultsJson = JSON.stringify(structuredResults)
         await writer.write(encoder.encode(`data: [RESULTS]${resultsJson}\n\n`))
 
-        // Call AI for text response
         const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
           method: 'POST',
           headers: {

@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Play, BookOpen, Scale, Heart as HeartIcon, Sparkles, ArrowLeft, Star, Calendar, Phone, MessageCircle, FileText, Building2, ShoppingBag, Baby, Info, Newspaper, Headphones } from "lucide-react";
+import { Play, BookOpen, Scale, Heart as HeartIcon, Sparkles, ArrowLeft, Star, Calendar, Phone, MessageCircle, FileText, Building2, ShoppingBag, Info, Newspaper, Headphones } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { YouTubeEmbed } from "@/components/YouTubeEmbed";
@@ -10,7 +10,6 @@ import rabbiBanner from "@/assets/rabbi-banner.png";
 import rabbiHero from "@/assets/rabbi-hero.png";
 
 const DONATION_URL = "https://www.matara.pro/nedarimplus/online/?mosad=7005270";
-const PARSHA_SHEETS_URL = "https://docs.google.com/spreadsheets/d/1Vg24IqyALCjirUfj8VB0mmalzx36JLeJ/edit";
 const WHATSAPP_GROUP_URL = "https://chat.whatsapp.com/F2c4sJxtBqB1wHmxcrHNXx";
 
 const categories = [
@@ -78,12 +77,6 @@ const communityActivities = [
     href: "/donate",
   },
   {
-    title: "ענפים לילדים",
-    description: "תוכן ופעילות לילדים",
-    icon: Baby,
-    href: "/kids",
-  },
-  {
     title: "אודות",
     description: "הכרת העמותה והרב",
     icon: Info,
@@ -143,19 +136,19 @@ const Index = () => {
                 שיעורי תורה, הלכה ומוסר
               </p>
               
-              <div className="flex flex-col sm:flex-row flex-wrap gap-4 justify-center md:justify-start animate-fade-up" style={{ animationDelay: "0.3s" }}>
+              <div className="flex flex-col sm:flex-row flex-wrap gap-3 justify-center md:justify-start animate-fade-up" style={{ animationDelay: "0.3s" }}>
                 <Link to="/lessons">
                   <Button variant="hero" size="xl" className="w-full sm:w-auto">
                     <Play className="w-5 h-5" />
                     לכל השיעורים
                   </Button>
                 </Link>
-                <a href={PARSHA_SHEETS_URL} target="_blank" rel="noopener noreferrer">
+                <Link to="/articles?category=פרשת השבוע">
                   <Button variant="hero" size="xl" className="w-full sm:w-auto bg-white/20 hover:bg-white/30">
                     <FileText className="w-5 h-5" />
                     דברי תורה לפרשת השבוע
                   </Button>
-                </a>
+                </Link>
                 <a href={DONATION_URL} target="_blank" rel="noopener noreferrer">
                   <Button variant="goldOutline" size="xl" className="w-full sm:w-auto border-gold text-gold hover:bg-gold/20">
                     <HeartIcon className="w-5 h-5" />
@@ -170,7 +163,7 @@ const Index = () => {
                   <div className="rounded-xl overflow-hidden border border-gold/30 bg-[#0a1628]/80 backdrop-blur-md shadow-lg">
                     <div className="bg-gradient-to-r from-[#0a1628] to-[#162a50] px-3 py-2 flex items-center gap-2 border-b border-gold/20">
                       <Play className="w-4 h-4 text-gold" />
-                      <h3 className="text-gold font-bold text-sm">שיעור פרשת השבוע האחרון</h3>
+                      <h3 className="text-gold font-bold text-sm truncate">שיעור פרשת השבוע האחרון</h3>
                     </div>
                     <div className="p-2">
                       <YouTubeEmbed url={parshaLesson.youtube_url} title={parshaLesson.title} />
@@ -214,7 +207,7 @@ const Index = () => {
               <h2 className="text-2xl md:text-3xl font-bold text-white">
                 שיעורים אחרונים
               </h2>
-              <Link to="/lessons" className="text-gold hover:text-gold/80 transition-colors inline-flex items-center gap-1">
+              <Link to="/lessons" className="text-gold hover:text-gold/80 transition-colors inline-flex items-center gap-1 text-sm whitespace-nowrap">
                 לכל השיעורים
                 <ArrowLeft className="w-4 h-4" />
               </Link>
@@ -412,11 +405,6 @@ const Index = () => {
                   לתרומה בנדרים פלוס
                 </Button>
               </a>
-              <Link to="/donate">
-                <Button variant="outline" size="xl" className="w-full sm:w-auto">
-                  למידע נוסף על העמותה
-                </Button>
-              </Link>
             </div>
           </div>
         </div>

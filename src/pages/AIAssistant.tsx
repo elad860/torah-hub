@@ -34,7 +34,6 @@ interface Message {
   results?: ResultItem[];
 }
 
-// Suggested questions
 function getDynamicSuggestions(): string[] {
   const month = new Date().getMonth();
   const base = [
@@ -157,7 +156,6 @@ function ResultCard({ item, onClick }: { item: ResultItem; onClick: () => void }
           : "hsl(var(--gold) / 0.3)",
       }}
     >
-      {/* Icon */}
       <div
         className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors"
         style={{
@@ -169,38 +167,35 @@ function ResultCard({ item, onClick }: { item: ResultItem; onClick: () => void }
         {isArticle && <BookOpen className="w-5 h-5 text-gold group-hover:text-gold/80" />}
       </div>
 
-      {/* Content */}
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-foreground leading-snug line-clamp-2 group-hover:text-gold transition-colors text-right">
+        <p className="text-sm font-semibold text-white leading-snug line-clamp-2 group-hover:text-gold transition-colors text-right">
           {item.title}
         </p>
         <div className="flex items-center gap-2 mt-1 justify-end flex-wrap">
           {item.category && (
-            <span className="text-[11px] text-muted-foreground">{item.category}</span>
+            <span className="text-[11px] text-white/60">{item.category}</span>
           )}
           {item.hebrew_year && (
             <span className="text-[11px] text-gold/60">{item.hebrew_year}</span>
           )}
           {item.series && (
-            <span className="text-[11px] text-muted-foreground truncate max-w-[100px]">{item.series}</span>
+            <span className="text-[11px] text-white/50 truncate max-w-[100px]">{item.series}</span>
           )}
         </div>
       </div>
 
-      {/* Action badge */}
       <Badge
         variant="outline"
-        className="flex-shrink-0 text-[10px] border-gold/20"
-        style={{ color: "hsl(var(--gold) / 0.7)" }}
+        className="flex-shrink-0 text-[10px] border-gold/20 text-gold/70"
       >
         {isLesson ? "וידאו" : isPodcast ? "שמע" : "מאמר"}
       </Badge>
-      <ExternalLink className="w-3.5 h-3.5 text-muted-foreground/40 flex-shrink-0 group-hover:text-gold/50 transition-colors" />
+      <ExternalLink className="w-3.5 h-3.5 text-white/30 flex-shrink-0 group-hover:text-gold/50 transition-colors" />
     </button>
   );
 }
 
-// ─── Results Grid in chat bubble ──────────────────────────────────────────────
+// ─── Results Grid ─────────────────────────────────────────────────────────────
 function ResultsGrid({ results, onArticleOpen }: { results: ResultItem[]; onArticleOpen: (item: ResultItem) => void }) {
   if (!results.length) return null;
   const lessons = results.filter((r) => r.type === "lesson");
@@ -211,7 +206,7 @@ function ResultsGrid({ results, onArticleOpen }: { results: ResultItem[]; onArti
     <div className="mt-3 space-y-3" dir="rtl">
       {lessons.length > 0 && (
         <div>
-          <p className="text-xs text-muted-foreground mb-1.5 flex items-center gap-1">
+          <p className="text-xs text-white/50 mb-1.5 flex items-center gap-1">
             <Play className="w-3 h-3 text-red-400" /> שיעורי וידאו ({lessons.length})
           </p>
           <div className="space-y-1.5">
@@ -223,7 +218,7 @@ function ResultsGrid({ results, onArticleOpen }: { results: ResultItem[]; onArti
       )}
       {articles.length > 0 && (
         <div>
-          <p className="text-xs text-muted-foreground mb-1.5 flex items-center gap-1">
+          <p className="text-xs text-white/50 mb-1.5 flex items-center gap-1">
             <BookOpen className="w-3 h-3 text-gold" /> מאמרים ({articles.length})
           </p>
           <div className="space-y-1.5">
@@ -235,7 +230,7 @@ function ResultsGrid({ results, onArticleOpen }: { results: ResultItem[]; onArti
       )}
       {podcasts.length > 0 && (
         <div>
-          <p className="text-xs text-muted-foreground mb-1.5 flex items-center gap-1">
+          <p className="text-xs text-white/50 mb-1.5 flex items-center gap-1">
             <Mic className="w-3 h-3 text-gold" /> הקלטות ({podcasts.length})
           </p>
           <div className="space-y-1.5">
@@ -311,7 +306,6 @@ const AIAssistant = () => {
           const jsonStr = line.slice(6).trim();
           if (jsonStr === "[DONE]") break;
 
-          // Check for our custom [RESULTS] event
           if (jsonStr.startsWith("[RESULTS]")) {
             try {
               structuredResults = JSON.parse(jsonStr.slice(9));
@@ -321,7 +315,6 @@ const AIAssistant = () => {
 
           try {
             const parsed = JSON.parse(jsonStr);
-            // Error from edge function
             if (parsed.error) {
               setMessages((prev) => [...prev, { role: "assistant", content: parsed.error, results: structuredResults }]);
               assistantAdded = true;
@@ -347,7 +340,6 @@ const AIAssistant = () => {
         }
       }
 
-      // Ensure assistant message exists even if only results, no text
       if (!assistantAdded && structuredResults.length > 0 && !assistantText) {
         setMessages((prev) => [
           ...prev,
@@ -364,7 +356,6 @@ const AIAssistant = () => {
 
   return (
     <Layout>
-      {/* Article modal from chat */}
       {openArticle && <ArticleModal article={openArticle} onClose={() => setOpenArticle(null)} />}
 
       <div className="flex flex-col ai-assistant-height">
@@ -372,9 +363,9 @@ const AIAssistant = () => {
         <div className="border-b border-gold/20 bg-black/40 backdrop-blur-md px-4 py-3 text-center flex-shrink-0">
           <div className="flex items-center justify-center gap-2 mb-0.5">
             <Sparkles className="w-5 h-5 text-gold" />
-            <h1 className="text-xl md:text-2xl font-bold text-foreground ai-assistant-font">עוזר AI חכם</h1>
+            <h1 className="text-xl md:text-2xl font-bold text-white ai-assistant-font">עוזר AI חכם</h1>
           </div>
-          <p className="text-muted-foreground text-xs md:text-sm">
+          <p className="text-white/60 text-xs md:text-sm">
             חיפוש חכם בכלל תוכן הרב · שיעורים · מאמרים · הקלטות
           </p>
         </div>
@@ -383,7 +374,6 @@ const AIAssistant = () => {
         <div className="flex-1 overflow-y-auto px-3 md:px-4 py-4 md:py-6 ai-chat-scroll" dir="rtl">
           {messages.length === 0 && (
             <div className="flex flex-col items-center justify-center h-full text-center gap-4 opacity-90 px-4">
-              {/* Hero icon */}
               <div className="relative">
                 <div className="w-20 h-20 rounded-full ai-welcome-orb flex items-center justify-center">
                   <Sparkles className="w-10 h-10 text-gold" />
@@ -394,13 +384,12 @@ const AIAssistant = () => {
               </div>
 
               <div>
-                <p className="text-foreground font-bold text-lg md:text-xl mb-1 ai-assistant-font">שלום! איך אפשר לעזור?</p>
-                <p className="text-muted-foreground text-sm max-w-md">
+                <p className="text-white font-bold text-lg md:text-xl mb-1 ai-assistant-font">שלום! איך אפשר לעזור?</p>
+                <p className="text-white/60 text-sm max-w-md">
                   אני מחפש בכל השיעורים, המאמרים וההקלטות של הרב אורן נזרית
                 </p>
               </div>
 
-              {/* Suggestion chips */}
               <div className="flex flex-wrap justify-center gap-2 mt-1 max-w-lg">
                 {suggestions.map((s) => (
                   <button
@@ -420,7 +409,6 @@ const AIAssistant = () => {
               key={i}
               className={`flex gap-2 md:gap-3 mb-4 ${msg.role === "user" ? "flex-row-reverse" : "flex-row"}`}
             >
-              {/* Avatar */}
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-1 ${
                   msg.role === "user" ? "ai-user-avatar" : "ai-bot-avatar"
@@ -433,14 +421,13 @@ const AIAssistant = () => {
                 )}
               </div>
 
-              {/* Bubble */}
               <div
                 className={`max-w-[88%] md:max-w-[80%] rounded-2xl px-4 py-3 ${
                   msg.role === "user" ? "ai-user-bubble" : "ai-bot-bubble"
                 }`}
               >
                 {msg.content && (
-                  <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap text-white">{msg.content}</p>
                 )}
 
                 {msg.results && msg.results.length > 0 && (
@@ -457,7 +444,7 @@ const AIAssistant = () => {
               </div>
               <div className="ai-bot-bubble rounded-2xl px-4 py-3 flex items-center gap-2">
                 <Loader2 className="w-4 h-4 animate-spin text-gold" />
-                <span className="text-sm text-muted-foreground">מחפש...</span>
+                <span className="text-sm text-white/60">מחפש...</span>
               </div>
             </div>
           )}
@@ -466,7 +453,6 @@ const AIAssistant = () => {
 
         {/* ── Input ── */}
         <div className="border-t border-gold/20 bg-black/40 backdrop-blur-md p-3 md:p-4 flex-shrink-0">
-          {/* Suggestion chips above input (when chat started) */}
           {messages.length > 0 && (
             <div className="max-w-3xl mx-auto flex gap-2 flex-wrap mb-2 justify-end" dir="rtl">
               {suggestions.slice(0, 3).map((s) => (

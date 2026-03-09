@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, Heart, Sparkles } from "lucide-react";
+import { Menu, X, Heart, Sparkles, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import rabbiBanner from "@/assets/rabbi-banner.png";
@@ -76,14 +76,22 @@ export function Header() {
             </a>
           </div>
 
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="md:hidden text-white p-2"
-            aria-label="תפריט"
-          >
-            {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
+          {/* Mobile: AI + Cart + Hamburger */}
+          <div className="flex md:hidden items-center gap-1">
+            <Link to="/ai-assistant">
+              <Button variant="ghost" size="icon" className="text-gold h-10 w-10">
+                <Sparkles className="w-5 h-5" />
+              </Button>
+            </Link>
+            <CartDrawer />
+            <button
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="text-white p-2"
+              aria-label="תפריט"
+            >
+              {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
+          </div>
         </div>
 
         {/* Mobile Navigation */}
@@ -96,13 +104,27 @@ export function Header() {
                   to={link.href}
                   onClick={() => setIsMenuOpen(false)}
                   className={cn(
-                    "px-4 py-3 rounded-lg text-white/80 hover:bg-gold/10 transition-colors",
+                    "px-4 py-3 rounded-lg text-white/80 hover:bg-gold/10 transition-colors text-base",
                     isActive(link.href) && "bg-gold/20 text-gold font-medium"
                   )}
                 >
                   {link.label}
                 </Link>
               ))}
+              {/* AI Assistant in mobile menu - highlighted */}
+              <Link
+                to="/ai-assistant"
+                onClick={() => setIsMenuOpen(false)}
+                className={cn(
+                  "px-4 py-3 rounded-lg flex items-center gap-2 transition-colors text-base",
+                  isActive("/ai-assistant") 
+                    ? "bg-gold/20 text-gold font-medium" 
+                    : "text-gold/90 hover:bg-gold/10"
+                )}
+              >
+                <Sparkles className="w-4 h-4" />
+                עוזר AI חכם
+              </Link>
               <a
                 href={DONATION_URL}
                 target="_blank"

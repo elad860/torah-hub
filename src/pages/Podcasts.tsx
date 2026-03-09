@@ -1,9 +1,10 @@
 import { useState, useMemo } from "react";
 import { Layout } from "@/components/Layout";
-import { Mic, Play, Volume2, Search, Filter, X } from "lucide-react";
+import { Play, Volume2, Search, Filter, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { usePodcasts } from "@/hooks/usePodcasts";
+import { FilterDrawer } from "@/components/FilterDrawer";
 
 const Podcasts = () => {
   const { data: podcasts, isLoading, error } = usePodcasts();
@@ -34,6 +35,7 @@ const Podcasts = () => {
   }, [podcasts, selectedYear, searchQuery]);
 
   const hasActiveFilters = searchQuery || selectedYear !== "all";
+  const activeFilterCount = selectedYear !== "all" ? 1 : 0;
 
   const clearAll = () => {
     setSearchQuery("");
@@ -54,12 +56,12 @@ const Podcasts = () => {
         </div>
       </section>
 
-      {/* Filters — sticky, matching Lessons page */}
+      {/* Filters */}
       <section className="py-4 bg-background/80 border-b border-border sticky top-16 md:top-20 z-40 backdrop-blur-sm">
         <div className="container mx-auto px-4 space-y-3">
-          {/* Search */}
-          <div className="flex flex-col md:flex-row gap-3 items-center">
-            <div className="relative w-full md:w-80">
+          {/* Search + mobile filter */}
+          <div className="flex gap-3 items-center">
+            <div className="relative flex-1 md:w-80 md:flex-none">
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 type="search"
@@ -69,17 +71,26 @@ const Podcasts = () => {
                 className="pr-9 h-9 text-sm"
               />
             </div>
+            <FilterDrawer
+              categories={[]}
+              selectedCategory={null}
+              onCategoryChange={() => {}}
+              years={years}
+              selectedYear={selectedYear}
+              onYearChange={setSelectedYear}
+              activeCount={activeFilterCount}
+            />
             {hasActiveFilters && (
-              <Button variant="ghost" size="sm" onClick={clearAll} className="text-muted-foreground text-xs gap-1">
+              <Button variant="ghost" size="sm" onClick={clearAll} className="text-muted-foreground text-xs gap-1 hidden md:flex">
                 <X className="w-3.5 h-3.5" />
                 נקה הכל
               </Button>
             )}
           </div>
 
-          {/* Hebrew year filter chips */}
+          {/* Hebrew year filter chips - desktop */}
           {years.length > 0 && (
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="hidden md:flex items-center gap-2 flex-wrap">
               <Filter className="w-4 h-4 text-muted-foreground flex-shrink-0" />
               <span className="text-xs text-muted-foreground flex-shrink-0">שנה:</span>
               <Button
@@ -136,7 +147,7 @@ const Podcasts = () => {
                   />
                   <div className="relative p-4 flex flex-col">
                     <div className="flex items-center justify-between mb-1">
-                      <h3 className="text-foreground font-semibold text-sm leading-tight line-clamp-2 flex-1">
+                      <h3 className="text-white font-semibold text-sm leading-tight line-clamp-2 flex-1">
                         {podcast.title}
                       </h3>
                       {podcast.hebrew_year && (
@@ -144,19 +155,19 @@ const Podcasts = () => {
                       )}
                     </div>
                     {podcast.description && (
-                      <p className="text-muted-foreground text-xs line-clamp-1 mb-3">
+                      <p className="text-white/60 text-xs line-clamp-1 mb-3">
                         {podcast.description}
                       </p>
                     )}
                     {podcast.audio_url ? (
                       <a href={podcast.audio_url} target="_blank" rel="noopener noreferrer">
-                        <Button size="sm" className="w-full gap-2 bg-gold/20 hover:bg-gold/30 text-gold border border-gold/30 text-xs font-semibold h-8">
-                          <Play className="w-3 h-3" />
+                        <Button size="sm" className="w-full gap-2 bg-gold/20 hover:bg-gold/30 text-gold border border-gold/30 text-xs font-semibold h-10">
+                          <Play className="w-3.5 h-3.5" />
                           האזן
                         </Button>
                       </a>
                     ) : (
-                      <Button size="sm" className="w-full gap-2 opacity-30 cursor-not-allowed bg-muted/10 text-muted-foreground border border-muted/20 text-xs h-8" disabled>
+                      <Button size="sm" className="w-full gap-2 opacity-30 cursor-not-allowed bg-muted/10 text-muted-foreground border border-muted/20 text-xs h-10" disabled>
                         <Volume2 className="w-3 h-3" />
                         לא זמין
                       </Button>

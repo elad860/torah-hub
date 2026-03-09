@@ -1,10 +1,18 @@
 import { useState, useMemo } from "react";
 import { Layout } from "@/components/Layout";
-import { FileText, BookOpen, Download, X } from "lucide-react";
+import { FileText, BookOpen, Download } from "lucide-react";
 import { useArticles } from "@/hooks/useArticles";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+
+const HEBREW_LETTERS = ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", "ז׳", "ח׳", "ט׳", "י׳", "י״א", "י״ב", "י״ג", "י״ד", "ט״ו", "ט״ז", "י״ז", "י״ח", "י״ט", "כ׳"];
+
+const toHebrewLabel = (idx: number, total: number): string => {
+  if (total === 1) return "הורדת המאמר";
+  return `חלק ${HEBREW_LETTERS[idx] ?? idx + 1}`;
+};
 
 interface MergedArticle {
   key: string;

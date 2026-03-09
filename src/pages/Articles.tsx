@@ -5,21 +5,71 @@ import { useArticles } from "@/hooks/useArticles";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
+// Merged article: one card per unique title+year, with all download links
+interface MergedArticle {
+  key: string;
+  title: string;
+  category: string;
+  hebrew_year: string | null;
+  created_at: string;
+  links: { url: string; label: string }[];
+}
+
+const HEBREW_YEAR_ORDER: Record<string, number> = {};
+const hebrewYearToNumber = (year: string | null): number => {
+  if (!year) return 0;
+  if (HEBREW_YEAR_ORDER[year] !== undefined) return HEBREW_YEAR_ORDER[year];
+  // Convert Hebrew year string to sortable number using char codes sum as fallback
+  // Primary: extract the last two chars which encode the year uniquely
+  return year.charCodeAt(year.length - 1) * 1000 + year.charCodeAt(year.length - 2);
+};
+
 const Articles = () => {
   const { data: articles, isLoading } = useArticles();
   const [selectedYear, setSelectedYear] = useState<string>("all");
 
-  const years = useMemo(() => {
+  // Deduplicate: group by title+hebrew_year, collect all download_urls
+  const merged = useMemo<MergedArticle[]>(() => {
     if (!articles) return [];
-    const set = new Set(articles.map((a) => a.hebrew_year).filter(Boolean) as string[]);
-    return Array.from(set).sort().reverse();
+
+    const map = new Map<string, MergedArticle>();
+
+    for (const article of articles) {
+      const key = `${article.title}||${article.hebrew_year ?? ""}`;
+      if (map.has(key)) {
+        const existing = map.get(key)!;
+        if (article.download_url && !existing.links.some(l => l.url === article.download_url)) {
+          existing.links.push({ url: article.download_url, label: `קישור ${existing.links.length + 1}` });
+        }
+      } else {
+        map.set(key, {
+          key,
+          title: article.title,
+          category: article.category,
+          hebrew_year: article.hebrew_year,
+          created_at: article.created_at,
+          links: article.download_url ? [{ url: article.download_url, label: "לצפייה במאמר" }] : [],
+        });
+      }
+    }
+
+    // Sort newest Hebrew year first, then by created_at descending within same year
+    return Array.from(map.values()).sort((a, b) => {
+      const yearDiff = hebrewYearToNumber(b.hebrew_year) - hebrewYearToNumber(a.hebrew_year);
+      if (yearDiff !== 0) return yearDiff;
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
   }, [articles]);
 
+  const years = useMemo(() => {
+    const set = new Set(merged.map((a) => a.hebrew_year).filter(Boolean) as string[]);
+    return Array.from(set).sort((a, b) => hebrewYearToNumber(b) - hebrewYearToNumber(a));
+  }, [merged]);
+
   const filtered = useMemo(() => {
-    if (!articles) return [];
-    if (selectedYear === "all") return articles;
-    return articles.filter((a) => a.hebrew_year === selectedYear);
-  }, [articles, selectedYear]);
+    if (selectedYear === "all") return merged;
+    return merged.filter((a) => a.hebrew_year === selectedYear);
+  }, [merged, selectedYear]);
 
   return (
     <Layout>
@@ -69,7 +119,7 @@ const Articles = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filtered.map((article) => (
               <div
-                key={article.id}
+                key={article.key}
                 className="group relative rounded-xl border border-gold/20 overflow-hidden transition-all duration-300 hover:border-gold/50 hover:shadow-lg hover:shadow-gold/10"
                 style={{
                   background: 'linear-gradient(135deg, hsl(35 30% 15% / 0.9), hsl(30 20% 12% / 0.95))',
@@ -92,9 +142,6 @@ const Articles = () => {
                       {article.hebrew_year && (
                         <span className="text-xs text-gold/70 font-medium">{article.hebrew_year}</span>
                       )}
-                      <span className="text-xs text-white/40">
-                        {new Date(article.created_at).toLocaleDateString("he-IL")}
-                      </span>
                     </div>
                   </div>
 
@@ -104,21 +151,24 @@ const Articles = () => {
 
                   <div className="flex-1" />
 
-                  {article.download_url ? (
-                    <a href={article.download_url} target="_blank" rel="noopener noreferrer" className="block mt-4">
-                      <Button className="w-full gap-2 bg-gold/20 hover:bg-gold/30 text-gold border border-gold/30 font-semibold">
-                        <ExternalLink className="w-4 h-4" />
-                        לצפייה במאמר
-                      </Button>
-                    </a>
-                  ) : (
-                    <div className="mt-4">
+                  {/* Download buttons — one per unique link */}
+                  <div className="mt-4 flex flex-col gap-2">
+                    {article.links.length > 0 ? (
+                      article.links.map((link, idx) => (
+                        <a key={idx} href={link.url} target="_blank" rel="noopener noreferrer" className="block">
+                          <Button className="w-full gap-2 bg-gold/20 hover:bg-gold/30 text-gold border border-gold/30 font-semibold">
+                            <ExternalLink className="w-4 h-4" />
+                            {article.links.length > 1 ? `קישור ${idx + 1}` : "לצפייה במאמר"}
+                          </Button>
+                        </a>
+                      ))
+                    ) : (
                       <Button className="w-full gap-2 opacity-40 cursor-not-allowed bg-white/5 text-white/40 border border-white/10" disabled>
                         <FileText className="w-4 h-4" />
                         קישור לא זמין
                       </Button>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               </div>
             ))}

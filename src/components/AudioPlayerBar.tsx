@@ -89,6 +89,11 @@ export function AudioPlayerBar() {
         onTimeUpdate={onTimeUpdate}
         onLoadedMetadata={onTimeUpdate}
         onEnded={() => pause()}
+        onError={(e) => {
+          console.error("[AudioPlayer] Audio error:", (e.target as HTMLAudioElement).error);
+          toast.error("שגיאה בהפעלת ההקלטה", { description: "הקובץ לא נמצא או שאינו נתמך" });
+          pause();
+        }}
       />
       <div
         className={cn(

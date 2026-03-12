@@ -3,6 +3,8 @@ import { Play, Pause, X, Volume2, VolumeX } from "lucide-react";
 import { useAudioPlayerStore } from "@/stores/audioPlayerStore";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
+import { toDirectAudioUrl, isLikelyAudioUrl } from "@/lib/audio-url";
+import { toast } from "sonner";
 
 export function AudioPlayerBar() {
   const { currentTrack, isPlaying, pause, resume, stop } = useAudioPlayerStore();

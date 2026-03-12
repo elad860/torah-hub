@@ -29,11 +29,25 @@ export function AudioPlayerBar() {
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio || !currentTrack) return;
-    audio.src = currentTrack.audioUrl;
-    audio.load();
-    if (isPlaying) {
-      audio.play().catch(() => pause());
+
+    const directUrl = toDirectAudioUrl(currentTrack.audioUrl);
+    console.log("[AudioPlayer] Original URL:", currentTrack.audioUrl);
+    console.log("[AudioPlayer] Direct URL:", directUrl);
+
+    if (!isLikelyAudioUrl(directUrl)) {
+      console.error("[AudioPlayer] Invalid audio URL:", directUrl);
+      toast.error("קישור שמע לא תקין", { description: currentTrack.title });
+      pause();
+      return;
     }
+
+    audio.src = directUrl;
+    audio.load();
+    audio.play().catch((err) => {
+      console.error("[AudioPlayer] Play failed:", err);
+      toast.error("לא ניתן להפעיל את ההקלטה", { description: "ייתכן שהקישור שגוי או שהקובץ לא זמין" });
+      pause();
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentTrack?.id]);
 

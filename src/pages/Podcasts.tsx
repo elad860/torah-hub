@@ -9,6 +9,7 @@ import { useAudioPlayerStore } from "@/stores/audioPlayerStore";
 
 const Podcasts = () => {
   const { data: podcasts, isLoading, error } = usePodcasts();
+  const { currentTrack, isPlaying, play, pause, resume } = useAudioPlayerStore();
   const [selectedYear, setSelectedYear] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
 

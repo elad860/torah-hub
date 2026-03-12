@@ -161,14 +161,26 @@ const Podcasts = () => {
                         {podcast.description}
                       </p>
                     )}
-                    {podcast.audio_url ? (
-                      <a href={podcast.audio_url} target="_blank" rel="noopener noreferrer">
-                        <Button size="sm" className="w-full gap-2 bg-gold/20 hover:bg-gold/30 text-gold border border-gold/30 text-xs font-semibold h-10">
-                          <Play className="w-3.5 h-3.5" />
-                          האזן
+                    {podcast.audio_url ? (() => {
+                      const isCurrentTrack = currentTrack?.id === podcast.id;
+                      const isCurrentPlaying = isCurrentTrack && isPlaying;
+                      return (
+                        <Button
+                          size="sm"
+                          className="w-full gap-2 bg-gold/20 hover:bg-gold/30 text-gold border border-gold/30 text-xs font-semibold h-10"
+                          onClick={() => {
+                            if (isCurrentTrack) {
+                              isPlaying ? pause() : resume();
+                            } else {
+                              play({ id: podcast.id, title: podcast.title, audioUrl: podcast.audio_url! });
+                            }
+                          }}
+                        >
+                          {isCurrentPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+                          {isCurrentPlaying ? "השהה" : isCurrentTrack ? "המשך" : "האזן"}
                         </Button>
-                      </a>
-                    ) : (
+                      );
+                    })() : (
                       <Button size="sm" className="w-full gap-2 opacity-30 cursor-not-allowed bg-muted/10 text-muted-foreground border border-muted/20 text-xs h-10" disabled>
                         <Volume2 className="w-3 h-3" />
                         לא זמין

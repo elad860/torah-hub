@@ -3,6 +3,8 @@ import { Play, Pause, X, Volume2, VolumeX } from "lucide-react";
 import { useAudioPlayerStore } from "@/stores/audioPlayerStore";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
+import { toDirectAudioUrl, isLikelyAudioUrl } from "@/lib/audio-url";
+import { toast } from "sonner";
 
 export function AudioPlayerBar() {
   const { currentTrack, isPlaying, pause, resume, stop } = useAudioPlayerStore();
@@ -27,11 +29,25 @@ export function AudioPlayerBar() {
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio || !currentTrack) return;
-    audio.src = currentTrack.audioUrl;
-    audio.load();
-    if (isPlaying) {
-      audio.play().catch(() => pause());
+
+    const directUrl = toDirectAudioUrl(currentTrack.audioUrl);
+    console.log("[AudioPlayer] Original URL:", currentTrack.audioUrl);
+    console.log("[AudioPlayer] Direct URL:", directUrl);
+
+    if (!isLikelyAudioUrl(directUrl)) {
+      console.error("[AudioPlayer] Invalid audio URL:", directUrl);
+      toast.error("קישור שמע לא תקין", { description: currentTrack.title });
+      pause();
+      return;
     }
+
+    audio.src = directUrl;
+    audio.load();
+    audio.play().catch((err) => {
+      console.error("[AudioPlayer] Play failed:", err);
+      toast.error("לא ניתן להפעיל את ההקלטה", { description: "ייתכן שהקישור שגוי או שהקובץ לא זמין" });
+      pause();
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentTrack?.id]);
 
@@ -73,6 +89,11 @@ export function AudioPlayerBar() {
         onTimeUpdate={onTimeUpdate}
         onLoadedMetadata={onTimeUpdate}
         onEnded={() => pause()}
+        onError={(e) => {
+          console.error("[AudioPlayer] Audio error:", (e.target as HTMLAudioElement).error);
+          toast.error("שגיאה בהפעלת ההקלטה", { description: "הקובץ לא נמצא או שאינו נתמך" });
+          pause();
+        }}
       />
       <div
         className={cn(

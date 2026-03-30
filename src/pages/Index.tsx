@@ -271,7 +271,7 @@ const Index = () => {
       </section>
 
       {/* Building Campaign Section */}
-      <section className="py-12 md:py-16 bg-black/30 backdrop-blur-sm">
+      <section className="py-12 md:py-16 bg-black/30">
         <div className="container mx-auto px-4">
           <div className="max-w-5xl mx-auto">
             <div className="text-center mb-10">

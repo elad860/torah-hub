@@ -1,15 +1,13 @@
 import { useState, useMemo } from "react";
 import { Layout } from "@/components/Layout";
-import { Play, Pause, Volume2, Search, Filter, X } from "lucide-react";
+import { Play, Volume2, Search, Filter, X, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { usePodcasts } from "@/hooks/usePodcasts";
 import { FilterDrawer } from "@/components/FilterDrawer";
-import { useAudioPlayerStore } from "@/stores/audioPlayerStore";
 
 const Podcasts = () => {
   const { data: podcasts, isLoading, error } = usePodcasts();
-  const { currentTrack, isPlaying, play, pause, resume } = useAudioPlayerStore();
   const [selectedYear, setSelectedYear] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -161,26 +159,17 @@ const Podcasts = () => {
                         {podcast.description}
                       </p>
                     )}
-                    {podcast.audio_url ? (() => {
-                      const isCurrentTrack = currentTrack?.id === podcast.id;
-                      const isCurrentPlaying = isCurrentTrack && isPlaying;
-                      return (
+                    {podcast.audio_url ? (
+                      <a href={podcast.audio_url} target="_blank" rel="noopener noreferrer">
                         <Button
                           size="sm"
                           className="w-full gap-2 bg-gold/20 hover:bg-gold/30 text-gold border border-gold/30 text-xs font-semibold h-10"
-                          onClick={() => {
-                            if (isCurrentTrack) {
-                              isPlaying ? pause() : resume();
-                            } else {
-                              play({ id: podcast.id, title: podcast.title, audioUrl: podcast.audio_url! });
-                            }
-                          }}
                         >
-                          {isCurrentPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-                          {isCurrentPlaying ? "השהה" : isCurrentTrack ? "המשך" : "האזן"}
+                          <ExternalLink className="w-3.5 h-3.5" />
+                          האזן
                         </Button>
-                      );
-                    })() : (
+                      </a>
+                    ) : (
                       <Button size="sm" className="w-full gap-2 opacity-30 cursor-not-allowed bg-muted/10 text-muted-foreground border border-muted/20 text-xs h-10" disabled>
                         <Volume2 className="w-3 h-3" />
                         לא זמין

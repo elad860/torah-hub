@@ -185,6 +185,7 @@ const Index = () => {
                     src={rabbiBanner} 
                     alt="הרב אורן נזרית שליט״א" 
                     className="w-full h-full object-cover object-top"
+                    loading="eager"
                   />
                 </div>
                 {/* Gold glow effect */}

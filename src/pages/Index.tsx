@@ -178,7 +178,7 @@ const Index = () => {
             <div className="flex-shrink-0 order-1 md:order-2 animate-fade-up">
               <div className="relative">
                 {/* Decorative ring */}
-                <div className="absolute inset-0 rounded-full border-4 border-gold/50 animate-pulse" style={{ transform: 'scale(1.1)' }} />
+                <div className="absolute inset-0 rounded-full border-4 border-gold/50" style={{ transform: 'scale(1.1)' }} />
                 {/* Photo circle */}
                 <div className="w-48 h-48 md:w-64 md:h-64 lg:w-80 lg:h-80 rounded-full overflow-hidden border-4 border-gold shadow-2xl">
                   <img 

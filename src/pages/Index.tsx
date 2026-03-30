@@ -380,7 +380,7 @@ const Index = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 md:py-20 bg-black/30 backdrop-blur-sm">
+      <section className="py-16 md:py-20 bg-black/30">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center">
             <div className="w-24 h-24 mx-auto mb-6 rounded-full overflow-hidden border-4 border-gold shadow-gold">

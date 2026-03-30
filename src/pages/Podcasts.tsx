@@ -8,7 +8,6 @@ import { FilterDrawer } from "@/components/FilterDrawer";
 
 const Podcasts = () => {
   const { data: podcasts, isLoading, error } = usePodcasts();
-  const { data: podcasts, isLoading, error } = usePodcasts();
   const [selectedYear, setSelectedYear] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
 

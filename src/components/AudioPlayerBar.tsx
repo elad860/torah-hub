@@ -98,7 +98,7 @@ export function AudioPlayerBar() {
       <div
         className={cn(
           "fixed bottom-0 inset-x-0 z-50 border-t border-gold/30",
-          "bg-[hsl(var(--navy-deep))]/95 backdrop-blur-md text-primary-foreground",
+          "text-primary-foreground",
           "px-3 py-2 md:px-6 md:py-3"
         )}
         style={{ background: "linear-gradient(180deg, hsl(240 10% 12% / 0.97), hsl(240 10% 8% / 0.99))" }}

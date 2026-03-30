@@ -160,7 +160,7 @@ const Index = () => {
               {/* Latest Parsha Video */}
               {parshaLesson && (
                 <div className="mt-6 animate-fade-up max-w-md" style={{ animationDelay: "0.4s" }}>
-                  <div className="rounded-xl overflow-hidden border border-gold/30 bg-[#0a1628]/80 backdrop-blur-md shadow-lg">
+                  <div className="rounded-xl overflow-hidden border border-gold/30 bg-[#0a1628]/95 shadow-lg">
                     <div className="bg-gradient-to-r from-[#0a1628] to-[#162a50] px-3 py-2 flex items-center gap-2 border-b border-gold/20">
                       <Play className="w-4 h-4 text-gold" />
                       <h3 className="text-gold font-bold text-sm truncate">שיעור פרשת השבוע האחרון</h3>
@@ -178,17 +178,18 @@ const Index = () => {
             <div className="flex-shrink-0 order-1 md:order-2 animate-fade-up">
               <div className="relative">
                 {/* Decorative ring */}
-                <div className="absolute inset-0 rounded-full border-4 border-gold/50 animate-pulse" style={{ transform: 'scale(1.1)' }} />
+                <div className="absolute inset-0 rounded-full border-4 border-gold/50" style={{ transform: 'scale(1.1)' }} />
                 {/* Photo circle */}
                 <div className="w-48 h-48 md:w-64 md:h-64 lg:w-80 lg:h-80 rounded-full overflow-hidden border-4 border-gold shadow-2xl">
                   <img 
                     src={rabbiBanner} 
                     alt="הרב אורן נזרית שליט״א" 
                     className="w-full h-full object-cover object-top"
+                    loading="eager"
                   />
                 </div>
                 {/* Gold glow effect */}
-                <div className="absolute inset-0 rounded-full bg-gold/20 blur-xl -z-10" />
+                <div className="absolute inset-0 rounded-full bg-gold/10 -z-10" />
               </div>
             </div>
           </div>
@@ -201,7 +202,7 @@ const Index = () => {
 
       {/* Recent Lessons Grid */}
       {recentLessons && recentLessons.lessons.length > 1 && (
-        <section className="py-12 md:py-16 bg-black/30 backdrop-blur-sm">
+        <section className="py-12 md:py-16 bg-black/30">
           <div className="container mx-auto px-4">
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-2xl md:text-3xl font-bold text-white">
@@ -271,7 +272,7 @@ const Index = () => {
       </section>
 
       {/* Building Campaign Section */}
-      <section className="py-12 md:py-16 bg-black/30 backdrop-blur-sm">
+      <section className="py-12 md:py-16 bg-black/30">
         <div className="container mx-auto px-4">
           <div className="max-w-5xl mx-auto">
             <div className="text-center mb-10">
@@ -317,7 +318,7 @@ const Index = () => {
       </section>
 
       {/* Listen by Phone Section */}
-      <section className="py-12 bg-black/40 backdrop-blur-sm text-white">
+      <section className="py-12 bg-black/40 text-white">
         <div className="container mx-auto px-4">
           <div className="max-w-5xl mx-auto">
             <div className="flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-right mb-8">
@@ -380,7 +381,7 @@ const Index = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 md:py-20 bg-black/30 backdrop-blur-sm">
+      <section className="py-16 md:py-20 bg-black/30">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center">
             <div className="w-24 h-24 mx-auto mb-6 rounded-full overflow-hidden border-4 border-gold shadow-gold">
@@ -388,6 +389,7 @@ const Index = () => {
                 src={rabbiBanner} 
                 alt="הרב אורן נזרית" 
                 className="w-full h-full object-cover object-top"
+                loading="lazy"
               />
             </div>
             <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">

@@ -389,6 +389,7 @@ const Index = () => {
                 src={rabbiBanner} 
                 alt="הרב אורן נזרית" 
                 className="w-full h-full object-cover object-top"
+                loading="lazy"
               />
             </div>
             <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">

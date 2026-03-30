@@ -317,7 +317,7 @@ const Index = () => {
       </section>
 
       {/* Listen by Phone Section */}
-      <section className="py-12 bg-black/40 backdrop-blur-sm text-white">
+      <section className="py-12 bg-black/40 text-white">
         <div className="container mx-auto px-4">
           <div className="max-w-5xl mx-auto">
             <div className="flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-right mb-8">

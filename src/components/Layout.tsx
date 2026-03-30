@@ -22,7 +22,7 @@ export function Layout({ children }: LayoutProps) {
         }}
       />
       {/* Dark Overlay for Readability */}
-      <div className="fixed inset-0 -z-10 bg-black/60 backdrop-blur-sm" />
+      <div className="fixed inset-0 -z-10 bg-black/70" />
       
       <Header />
       <main className={`flex-1 relative ${hasTrack ? "pb-20 md:pb-[4.5rem]" : ""}`}>{children}</main>

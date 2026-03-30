@@ -160,7 +160,7 @@ const Index = () => {
               {/* Latest Parsha Video */}
               {parshaLesson && (
                 <div className="mt-6 animate-fade-up max-w-md" style={{ animationDelay: "0.4s" }}>
-                  <div className="rounded-xl overflow-hidden border border-gold/30 bg-[#0a1628]/80 backdrop-blur-md shadow-lg">
+                  <div className="rounded-xl overflow-hidden border border-gold/30 bg-[#0a1628]/95 shadow-lg">
                     <div className="bg-gradient-to-r from-[#0a1628] to-[#162a50] px-3 py-2 flex items-center gap-2 border-b border-gold/20">
                       <Play className="w-4 h-4 text-gold" />
                       <h3 className="text-gold font-bold text-sm truncate">שיעור פרשת השבוע האחרון</h3>

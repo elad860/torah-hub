@@ -1,11 +1,10 @@
 import { useState, useMemo } from "react";
 import { Layout } from "@/components/Layout";
-import { Play, Pause, Volume2, Search, Filter, X } from "lucide-react";
+import { Play, Volume2, Search, Filter, X, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { usePodcasts } from "@/hooks/usePodcasts";
 import { FilterDrawer } from "@/components/FilterDrawer";
-import { useAudioPlayerStore } from "@/stores/audioPlayerStore";
 
 const Podcasts = () => {
   const { data: podcasts, isLoading, error } = usePodcasts();

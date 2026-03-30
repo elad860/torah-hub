@@ -188,7 +188,7 @@ const Index = () => {
                   />
                 </div>
                 {/* Gold glow effect */}
-                <div className="absolute inset-0 rounded-full bg-gold/20 blur-xl -z-10" />
+                <div className="absolute inset-0 rounded-full bg-gold/10 -z-10" />
               </div>
             </div>
           </div>

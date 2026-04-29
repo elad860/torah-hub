@@ -73,7 +73,12 @@ const BookCheckout = () => {
     setIsSubmitting(false);
 
     if (error) {
-      toast({ title: "שגיאה", description: "אירעה שגיאה, נסה שנית", variant: "destructive" });
+      const msg = error.message?.includes('Too many orders')
+        ? 'יותר מדי הזמנות בזמן קצר. אנא המתן דקה ונסה שוב.'
+        : error.message?.includes('check constraint') || error.message?.includes('violates')
+        ? 'אחד מהפרטים שהוזנו אינו תקין. בדוק את השם, הטלפון, האימייל והמחיר.'
+        : 'אירעה שגיאה, נסה שנית';
+      toast({ title: "שגיאה", description: msg, variant: "destructive" });
       return;
     }
 

@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import * as XLSX from 'https://esm.sh/xlsx@0.18.5'
+import { requireAdmin } from '../_shared/auth.ts'
 
 // Hebrew year calculation
 const ROSH_HASHANA: Record<number, [number, number]> = {
@@ -148,6 +149,11 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
+
+  // 🔒 Admin-only — also called server-to-server from scan-comments with the service role JWT,
+  // but since scan-comments itself now requires admin, this remains a defense-in-depth check.
+  const auth = await requireAdmin(req)
+  if (!auth.ok) return auth.response
 
   try {
     const { sheetUrl, sourceVideoId, debug, publishedAt } = await req.json()

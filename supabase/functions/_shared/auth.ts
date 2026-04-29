@@ -27,11 +27,17 @@ export async function requireAdmin(req: Request): Promise<
   const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
+  const token = authHeader.replace('Bearer ', '')
+
+  // Trusted server-to-server calls between our own functions use the service role JWT
+  if (token === serviceKey) {
+    return { ok: true, userId: 'service-role' }
+  }
+
   // Verify the user
   const userClient = createClient(supabaseUrl, anonKey, {
     global: { headers: { Authorization: authHeader } },
   })
-  const token = authHeader.replace('Bearer ', '')
   const { data: claimsData, error: claimsErr } = await userClient.auth.getClaims(token)
   if (claimsErr || !claimsData?.claims?.sub) {
     return {
